@@ -33,6 +33,7 @@ def main():
     # Add two different commands
     dispatcher.add_handler(CommandHandler("add", add))
     dispatcher.add_handler(CommandHandler("help", help_command))
+    dispatcher.add_handler(CommandHandler("hello", hello))
     dispatcher.add_handler(CommandHandler("delete", delete))
     dispatcher.add_handler(CommandHandler("get", get))
 
@@ -58,6 +59,15 @@ def echo(update, context):
 def help_command(update: Update, context: CallbackContext) -> None:
     """Send a message when the command /help is issued."""
     update.message.reply_text('Helping you helping you.')
+
+def hello(update: Update, context: CallbackContext) -> None:
+    """Send a message when the command /hello is issued."""
+    try:
+        logging.info("Greeting action on: " + context.args[0])
+        msg = context.args[0]
+        update.message.reply_text('Good day, ' + msg + '!')
+    except (IndexError, ValueError):
+        update.message.reply_text('Usage: /hello <keyword>')
 
 def add(update: Update, context: CallbackContext) -> None:
     """Send a message when the command /add is issued."""
