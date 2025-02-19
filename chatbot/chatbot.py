@@ -3,6 +3,7 @@ import logging
 import redis
 from telegram import Update
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
+from ChatGPT_HKBU import HKBU_ChatGPT
 
 global redis1
 def main():
@@ -20,8 +21,14 @@ def main():
     # Logging
     logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
     # Register dispatcher to handle message
-    echo_handler = MessageHandler(Filters.text & (~Filters.command), echo)
-    dispatcher.add_handler(echo_handler)
+    # echo_handler = MessageHandler(Filters.text & (~Filters.command), echo)
+    # dispatcher.add_handler(echo_handler)
+
+    # dispatcher for chatgpt
+    global chatgpt
+    chatgpt = HKBU_ChatGPT(config)
+    chatgpt_handler = MessageHandler(Filters.text & (~Filters.command), equiped_chatbot)
+    dispatcher.add_handler(chatgpt_handler)
 
     # Add two different commands
     dispatcher.add_handler(CommandHandler("add", add))
@@ -32,6 +39,13 @@ def main():
     # Start bot
     updater.start_polling()
     updater.idle()
+
+def equiped_chatbot(update, context):
+    global chatgpt
+    reply_message = chatgpt.submit(update.message.text)
+    logging.info("Update: " + str(update))
+    logging.info("Context: " + str(context))
+    context.bot.send_message(chat_id=update.effective_chat.id, text=reply_message)
 
 def echo(update, context):
     reply_message = update.message.text.upper()

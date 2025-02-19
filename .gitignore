@@ -1,2 +1,3 @@
 .DS_Store
 chatbot/config.ini
+chatbot/__pycache__/ChatGPT_HKBU.cpython-311.pyc
