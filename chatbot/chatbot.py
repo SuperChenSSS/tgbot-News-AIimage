@@ -27,6 +27,7 @@ def main():
     dispatcher.add_handler(CommandHandler("add", add))
     dispatcher.add_handler(CommandHandler("help", help_command))
     dispatcher.add_handler(CommandHandler("delete", delete))
+    dispatcher.add_handler(CommandHandler("get", get))
 
     # Start bot
     updater.start_polling()
@@ -48,7 +49,7 @@ def add(update: Update, context: CallbackContext) -> None:
     """Send a message when the command /add is issued."""
     try:
         global redis1
-        logging.info(context.args[0])
+        logging.info("Add action on: " + context.args[0])
         msg = context.args[0] # /add keyword
         redis1.incr(msg)
         value = redis1.get(msg)
@@ -62,13 +63,28 @@ def add(update: Update, context: CallbackContext) -> None:
 def delete(update: Update, context: CallbackContext) -> None:
     """Send a message when the command /delete is issued."""
     try:
-        logging.info(context.args[0])
+        logging.info("Delete action on: " + context.args[0])
         msg = context.args[0] # /delete keyword
         redis1.delete(msg)
         update.message.reply_text("You have deleted " + msg)
 
     except (IndexError, ValueError):
         update.message.reply_text('Usage: /delete <keyword>')
+
+def get(update: Update, context: CallbackContext) -> None:
+    """Send a message when the command /get is issued."""
+    try:
+        logging.info("Get action on: " + context.args[0])
+        msg = context.args[0] # /get keyword
+        value = redis1.get(msg)
+        if value is None:
+            update.message.reply_text("No record for: " + msg)
+        else:
+            if isinstance(value, bytes):
+                value = value.decode('utf-8')
+            update.message.reply_text("You have said " + msg + " for " + value + " times.")
+    except (IndexError, ValueError):
+        update.message.reply_text('Usage: /get <keyword>')
 
 if __name__ == '__main__':
     main()
