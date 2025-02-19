@@ -26,6 +26,7 @@ def main():
     # Add two different commands
     dispatcher.add_handler(CommandHandler("add", add))
     dispatcher.add_handler(CommandHandler("help", help_command))
+    dispatcher.add_handler(CommandHandler("delete", delete))
 
     # Start bot
     updater.start_polling()
@@ -57,6 +58,17 @@ def add(update: Update, context: CallbackContext) -> None:
 
     except (IndexError, ValueError):
         update.message.reply_text('Usage: /add <keyword>')
+
+def delete(update: Update, context: CallbackContext) -> None:
+    """Send a message when the command /delete is issued."""
+    try:
+        logging.info(context.args[0])
+        msg = context.args[0] # /delete keyword
+        redis1.delete(msg)
+        update.message.reply_text("You have deleted " + msg)
+
+    except (IndexError, ValueError):
+        update.message.reply_text('Usage: /delete <keyword>')
 
 if __name__ == '__main__':
     main()
