@@ -38,6 +38,7 @@ def main():
     dispatcher.add_handler(CommandHandler("hello", hello))
     dispatcher.add_handler(CommandHandler("delete", delete))
     dispatcher.add_handler(CommandHandler("get", get))
+    dispatcher.add_handler(CommandHandler("set", set))
 
     # Start bot
     updater.start_polling()
@@ -65,8 +66,8 @@ def help_command(update: Update, context: CallbackContext) -> None:
 def hello(update: Update, context: CallbackContext) -> None:
     """Send a message when the command /hello is issued."""
     try:
-        logging.info("Greeting action on: " + context.args[0])
         msg = context.args[0]
+        logging.info("Greeting action on: " + msg)
         update.message.reply_text('Good day, ' + msg + '!')
     except (IndexError, ValueError):
         update.message.reply_text('Usage: /hello <keyword>')
@@ -96,6 +97,25 @@ def delete(update: Update, context: CallbackContext) -> None:
 
     except (IndexError, ValueError):
         update.message.reply_text('Usage: /delete <keyword>')
+
+def set(update: Update, context: CallbackContext) -> None:
+    """Send a message when the command /set is issued."""
+    try:
+        logging.info("Set action on: " + context.args[0] + " to " + context.args[1])
+        keywordA = context.args[0] # /set keywordA keywordB
+        keywordB = context.args[1]
+        value = redis1.get(keywordA)
+        if value is None:
+            update.message.reply_text("No record for: " + keywordA)
+        else:
+            redis1.set(keywordB, value)
+            redis1.delete(keywordA)
+            update.message.reply_text(keywordA + " changed to " + keywordB)
+
+    except (IndexError, ValueError):
+        update.message.reply_text('Usage: /set <keywordA> <keywordB>')
+
+
 
 def get(update: Update, context: CallbackContext) -> None:
     """Send a message when the command /get is issued."""
