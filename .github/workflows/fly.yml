@@ -8,16 +8,14 @@ jobs:
         name: Deploy app
         runs-on: ubuntu-latest
         concurrency: deploy-group
+        env:
+            FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+            APP: ${{ vars.APP_NAME}}
         steps:
             - uses: actions/checkout@v3
             - uses: superfly/flyctl-actions/setup-flyctl@master
             - name: Deploy to Fly
               run: flyctl deploy --remote-only --no-cache
               working-directory: ./chatbot
-              env:
-                FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
             - name: Limit to 1 VM
-              run: flyctl scale count 1
-              env:
-                FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
-                APP: chatbot-cmy
+              run: flyctl scale count 1 -a $APP
