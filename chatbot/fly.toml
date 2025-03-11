@@ -33,6 +33,4 @@ primary_region = 'hkg'
   size = 'shared-cpu-1x'
 
 [scale]
-  min_instances = 1
-  max_instances = 1
   memory = "256mb"
