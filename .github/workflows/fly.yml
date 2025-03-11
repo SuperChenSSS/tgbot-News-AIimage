@@ -10,7 +10,11 @@ jobs:
         concurrency: deploy-group
         steps:
             - uses: actions/checkout@v3
+            - name: Setup Python
+              uses: actions/setup-python@v4
             - uses: superfly/flyctl-actions/setup-flyctl@master
+              with:
+                python-version: '3.12'
             - run: flyctl deploy --remote-only
               working-directory: ./chatbot
               env:
