@@ -15,15 +15,15 @@ jobs:
             - name: Build Pydoc-Markdown
               run: |
                 pip install pydoc-markdown
-                mkdir -p $(pwd)/chatbot/tmp_docs
-                pydoc-markdown -I $(pwd)/chatbot/ --render-toc > $(pwd)/chatbot/tmp_docs/README.md
+                mkdir -p $(pwd)/tmp_docs
+                pydoc-markdown -I $(pwd)/chatbot/ --render-toc > $(pwd)/tmp_docs/README.md
             - name: Upload Release Notes to Wiki
               uses: docker://decathlon/wiki-page-creator-action:latest
               env:
                 ACTION_MAIL: chenmengyang_2016@hotmail.com
                 ACTION_NAME: SuperChenSSS
                 GH_PAT: ${{ secrets.GIT_TOKEN }}
-                MD_FOLDER: $(pwd)/chatbot/tmp_docs
+                MD_FOLDER: tmp_docs
                 OWNER: SuperChenSSS
                 REPO_NAME: comp7940-lab
 
