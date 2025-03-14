@@ -21,7 +21,7 @@ jobs:
             - name: Build Pydoc-Markdown
               run: |
                 pip install pydoc-markdown
-                pydoc-markdown -I $(pwd)/chatbot/ --render-toc > ./docs/README.md
+                pydoc-markdown -I $(pwd)/chatbot/ --render-toc > $(pwd)/chatbot/docs/README.md
             - name: Deploy to Fly
               run: flyctl deploy --remote-only --no-cache
               working-directory: ./chatbot
