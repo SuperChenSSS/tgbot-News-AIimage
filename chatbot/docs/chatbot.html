@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Python: module chatbot</title>
+</head><body>
+
+<table class="heading">
+<tr class="heading-text decor">
+<td class="title">&nbsp;<br><strong class="title">chatbot</strong></td>
+<td class="extra"><a href=".">index</a><br><a href="file:/Users/superchen/Projects/comp7940-lab/chatbot/chatbot.py">/Users/superchen/Projects/comp7940-lab/chatbot/chatbot.py</a></td></tr></table>
+    <p><span class="code">#import&nbsp;configparser</span></p>
+<p>
+<table class="section">
+<tr class="decor pkg-content-decor heading-text">
+<td class="section-title" colspan=3>&nbsp;<br><strong class="bigsection">Modules</strong></td></tr>
+    
+<tr><td class="decor pkg-content-decor"><span class="code">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></td><td>&nbsp;</td>
+<td class="singlecolumn"><table><tr><td class="multicolumn"><a href="logging.html">logging</a><br>
+</td><td class="multicolumn"><a href="os.html">os</a><br>
+</td><td class="multicolumn"><a href="pydoc.html">pydoc</a><br>
+</td><td class="multicolumn"><a href="redis.html">redis</a><br>
+</td></tr></table></td></tr></table><p>
+<table class="section">
+<tr class="decor functions-decor heading-text">
+<td class="section-title" colspan=3>&nbsp;<br><strong class="bigsection">Functions</strong></td></tr>
+    
+<tr><td class="decor functions-decor"><span class="code">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></td><td>&nbsp;</td>
+<td class="singlecolumn"><dl><dt><a name="-add"><strong>add</strong></a>(update: telegram.update.Update, context: telegram.ext.callbackcontext.CallbackContext) -&gt; None</dt><dd><span class="code">Add&nbsp;a&nbsp;message&nbsp;to&nbsp;DB&nbsp;when&nbsp;the&nbsp;command&nbsp;/add&nbsp;is&nbsp;issued.<br>
+&nbsp;<br>
+:param:&nbsp;args[0]&nbsp;as&nbsp;the&nbsp;keyword<br>
+:return:&nbsp;You&nbsp;have&nbsp;said&nbsp;args[0]&nbsp;for&nbsp;&lt;value&gt;&nbsp;times.<br>
+:rtype:&nbsp;reply_text</span></dd></dl>
+ <dl><dt><a name="-delete"><strong>delete</strong></a>(update: telegram.update.Update, context: telegram.ext.callbackcontext.CallbackContext) -&gt; None</dt><dd><span class="code">Delete&nbsp;a&nbsp;message&nbsp;when&nbsp;the&nbsp;command&nbsp;/delete&nbsp;is&nbsp;issued.<br>
+&nbsp;<br>
+:param:&nbsp;args[0]&nbsp;as&nbsp;the&nbsp;keyword<br>
+:return:&nbsp;You&nbsp;have&nbsp;deleted&nbsp;&lt;keyword&gt;.<br>
+:rtype:&nbsp;reply_text</span></dd></dl>
+ <dl><dt><a name="-echo"><strong>echo</strong></a>(update, context)</dt><dd><span class="code">Echo&nbsp;the&nbsp;user&nbsp;message&nbsp;in&nbsp;lowercase.<br>
+&nbsp;<br>
+:param:&nbsp;args[0]&nbsp;as&nbsp;message<br>
+:return:&nbsp;lowercase&nbsp;of&nbsp;the&nbsp;message<br>
+:rtype:&nbsp;send_message</span></dd></dl>
+ <dl><dt><a name="-equiped_chatbot"><strong>equiped_chatbot</strong></a>(update, context)</dt></dl>
+ <dl><dt><a name="-get"><strong>get</strong></a>(update: telegram.update.Update, context: telegram.ext.callbackcontext.CallbackContext) -&gt; None</dt><dd><span class="code">Get&nbsp;the&nbsp;number&nbsp;of&nbsp;occurence&nbsp;with&nbsp;keyword:&nbsp;args[0]&nbsp;when&nbsp;the&nbsp;command&nbsp;/get&nbsp;is&nbsp;issued.<br>
+&nbsp;<br>
+:param:&nbsp;args[0]&nbsp;as&nbsp;the&nbsp;keyword<br>
+:return:&nbsp;Number&nbsp;of&nbsp;occurence&nbsp;of&nbsp;the&nbsp;keyword.<br>
+:rtype:&nbsp;reply_text</span></dd></dl>
+ <dl><dt><a name="-hello"><strong>hello</strong></a>(update: telegram.update.Update, context: telegram.ext.callbackcontext.CallbackContext) -&gt; None</dt><dd><span class="code">Greetings&nbsp;with&nbsp;hello&nbsp;with&nbsp;/hello&nbsp;&lt;keyword&gt;.<br>
+&nbsp;<br>
+:param:&nbsp;None<br>
+:return&nbsp;context:&nbsp;Good&nbsp;day,&nbsp;&lt;keyword&gt;!</span></dd></dl>
+ <dl><dt><a name="-help_command"><strong>help_command</strong></a>(update: telegram.update.Update, context: telegram.ext.callbackcontext.CallbackContext) -&gt; None</dt><dd><span class="code">A&nbsp;placeholder&nbsp;when&nbsp;the&nbsp;command&nbsp;/help&nbsp;is&nbsp;issued.</span></dd></dl>
+ <dl><dt><a name="-main"><strong>main</strong></a>()</dt></dl>
+ <dl><dt><a name="-set"><strong>set</strong></a>(update: telegram.update.Update, context: telegram.ext.callbackcontext.CallbackContext) -&gt; None</dt><dd><span class="code">Set&nbsp;args[0]&nbsp;to&nbsp;args[1]&nbsp;when&nbsp;the&nbsp;command&nbsp;/set&nbsp;is&nbsp;issued.<br>
+&nbsp;<br>
+:param:&nbsp;args[0]&nbsp;as&nbsp;the&nbsp;keyword&nbsp;to&nbsp;be&nbsp;changed,&nbsp;args[1]&nbsp;as&nbsp;the&nbsp;new&nbsp;keyword<br>
+:return:&nbsp;args[0]&nbsp;changed&nbsp;to&nbsp;args[1]<br>
+:rtype:&nbsp;reply_text</span></dd></dl>
+</td></tr></table>
+</body></html>

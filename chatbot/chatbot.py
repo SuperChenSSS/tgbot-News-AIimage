@@ -52,6 +52,12 @@ def equiped_chatbot(update, context):
     context.bot.send_message(chat_id=update.effective_chat.id, text=reply_message)
 
 def echo(update, context):
+    """Echo the user message in lowercase.
+    
+    :param: args[0] as message
+    :return: lowercase of the message
+    :rtype: send_message
+    """
     reply_message = update.message.text.upper()
     logging.info("Update: " + str(update))
     logging.info("Context: " + str(context))
@@ -60,11 +66,15 @@ def echo(update, context):
 # Define a few command handlers. These usually take the two arguments update and
 # context. Error handlers also receive the raised TelegramError object in error.
 def help_command(update: Update, context: CallbackContext) -> None:
-    """Send a message when the command /help is issued."""
+    """A placeholder when the command /help is issued."""
     update.message.reply_text('Helping you helping you.')
 
 def hello(update: Update, context: CallbackContext) -> None:
-    """Send a message when the command /hello is issued."""
+    """Greetings with hello with /hello <keyword>.
+
+    :param: None
+    :return context: Good day, <keyword>!
+    """
     try:
         msg = context.args[0]
         logging.info("Greeting action on: " + msg)
@@ -73,7 +83,12 @@ def hello(update: Update, context: CallbackContext) -> None:
         update.message.reply_text('Usage: /hello <keyword>')
 
 def add(update: Update, context: CallbackContext) -> None:
-    """Send a message when the command /add is issued."""
+    """Add a message to DB when the command /add is issued.
+
+    :param: args[0] as the keyword
+    :return: You have said args[0] for <value> times.
+    :rtype: reply_text
+    """
     try:
         global redis1
         logging.info("Add action on: " + context.args[0])
@@ -88,7 +103,12 @@ def add(update: Update, context: CallbackContext) -> None:
         update.message.reply_text('Usage: /add <keyword>')
 
 def delete(update: Update, context: CallbackContext) -> None:
-    """Send a message when the command /delete is issued."""
+    """Delete a message when the command /delete is issued.
+
+    :param: args[0] as the keyword
+    :return: You have deleted <keyword>.
+    :rtype: reply_text
+    """
     try:
         logging.info("Delete action on: " + context.args[0])
         msg = context.args[0] # /delete keyword
@@ -99,7 +119,12 @@ def delete(update: Update, context: CallbackContext) -> None:
         update.message.reply_text('Usage: /delete <keyword>')
 
 def set(update: Update, context: CallbackContext) -> None:
-    """Send a message when the command /set is issued."""
+    """Set args[0] to args[1] when the command /set is issued.
+
+    :param: args[0] as the keyword to be changed, args[1] as the new keyword
+    :return: args[0] changed to args[1]
+    :rtype: reply_text
+    """
     try:
         logging.info("Set action on: " + context.args[0] + " to " + context.args[1])
         keywordA = context.args[0] # /set keywordA keywordB
@@ -118,7 +143,12 @@ def set(update: Update, context: CallbackContext) -> None:
 
 
 def get(update: Update, context: CallbackContext) -> None:
-    """Send a message when the command /get is issued."""
+    """Get the number of occurence with keyword: args[0] when the command /get is issued.
+
+    :param: args[0] as the keyword
+    :return: Number of occurence of the keyword.
+    :rtype: reply_text
+    """
     try:
         logging.info("Get action on: " + context.args[0])
         msg = context.args[0] # /get keyword

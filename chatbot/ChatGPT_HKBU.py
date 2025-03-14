@@ -3,10 +3,23 @@ import requests
 import os
 
 class HKBU_ChatGPT():
+    '''
+    A class for interacting with the HKBU ChatGPT service.
+
+    Methods:
+        submit(message): Submits a message to the HKBU ChatGPT service and returns the response.
+    '''
     def __init__(self):
         pass
     
     def submit(self, message):
+        '''Submit a message to the HKBU ChatGPT service and get a response.
+
+        :param message: The message to send to the ChatGPT service.
+        :type message: str
+        :return: The response from the ChatGPT service, or an error message.
+        :rtype: str
+        '''
         conversation = [{"role": "user", "content": message}]
 
         url = ((os.environ['BASICURL']) +
