@@ -13,7 +13,15 @@ jobs:
             APP: ${{ vars.APP_NAME}}
         steps:
             - uses: actions/checkout@v3
+            - uses: actions/setup-python@v5
+              with:
+                python-version: '3.12'
+                cache: 'pip'
             - uses: superfly/flyctl-actions/setup-flyctl@master
+            - name: Build Pydoc-Markdown
+              run: |
+                pip install pydoc-markdown
+                pydoc-markdown -I $(pwd)/chatbot/ --render-toc > docs/README.md
             - name: Deploy to Fly
               run: flyctl deploy --remote-only --no-cache
               working-directory: ./chatbot
