@@ -1,3 +1,4 @@
 .DS_Store
 chatbot/config.ini
 chatbot/__pycache__/*
+tmp_docs/*

@@ -1,0 +1,20 @@
+loaders:
+- type: python
+  search_path: [./chatbot]
+renderer:
+  type: mkdocs
+  output_directory: ./tmp_docs
+  site_name: Chatbot
+  pages:
+  - title: All API
+    name: Home
+    contents:
+    - '*'
+  - title: ChatGPT_HKBU
+    name: ChatGPT
+    contents:
+    - ChatGPT_HKBU.*
+  - title: Chatbot
+    name: chatbot
+    contents:
+    - chatbot.*
