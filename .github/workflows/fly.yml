@@ -15,6 +15,7 @@ jobs:
             - name: Build Pydoc-Markdown
               run: |
                 pip install pydoc-markdown
+                mkdir -p $(pwd)/chatbot/tmp_docs
                 pydoc-markdown -I $(pwd)/chatbot/ --render-toc > $(pwd)/chatbot/tmp_docs/README.md
             - name: Upload Release Notes to Wiki
               uses: docker://decathlon/wiki-page-creator-action:latest
