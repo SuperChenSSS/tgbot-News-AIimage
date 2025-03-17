@@ -2,7 +2,7 @@
 import os
 import logging
 import redis
-from telegram import Update
+from telegram import Update, ParseMode
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
 from ChatGPT_HKBU import HKBU_ChatGPT
 
@@ -83,7 +83,7 @@ def equiped_chatbot(update, context):
     # Split the message if it's too long
     message_parts = split_message(reply_message)
     for part in message_parts:
-        context.bot.send_message(chat_id=update.effective_chat.id, text=part)
+        context.bot.send_message(chat_id=update.effective_chat.id, text=part, parse_mode=ParseMode.MARKDOWN)
     # context.bot.send_message(chat_id=update.effective_chat.id, text=reply_message)
 
 def echo(update, context):
