@@ -60,7 +60,7 @@ class HKBU_ChatGPT():
                     "temperature": 1,
                     "topK": 40,
                     "topP": 0.95,
-                    "maxOutputTokens": os.environ.get(MAX_TOKEN),
+                    "maxOutputTokens": os.environ.get("MAX_TOKEN"),
                     "responseMimeType": "text/plain"
                 }
             }
