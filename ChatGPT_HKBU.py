@@ -60,7 +60,7 @@ class HKBU_ChatGPT():
                     "temperature": 1,
                     "topK": 40,
                     "topP": 0.95,
-                    "maxOutputTokens": 4096,
+                    "maxOutputTokens": 4000,
                     "responseMimeType": "text/plain"
                 }
             }
