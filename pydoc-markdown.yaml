@@ -1,6 +1,6 @@
 loaders:
 - type: python
-  search_path: [./chatbot]
+  search_path: [.]
 renderer:
   type: mkdocs
   output_directory: ./tmp_docs

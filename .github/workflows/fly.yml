@@ -39,6 +39,6 @@ jobs:
             - uses: superfly/flyctl-actions/setup-flyctl@master
             - name: Deploy to Fly
               run: flyctl deploy --remote-only --no-cache
-              working-directory: ./chatbot
+              working-directory: .
             - name: Limit to 1 VM
               run: flyctl scale count 1 -a $APP
