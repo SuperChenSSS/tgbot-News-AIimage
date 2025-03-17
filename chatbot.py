@@ -7,7 +7,7 @@ from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, Callb
 from ChatGPT_HKBU import HKBU_ChatGPT
 
 global redis1
-TELEGRAM_MAX_MESSAGE_LENGTH = os.environ.get("MAX_TOKEN")
+TELEGRAM_MAX_MESSAGE_LENGTH = int(os.environ.get("MAX_TOKEN"))
 
 def main():
     updater = Updater(token=(os.environ["ACCESS_TOKEN_TG"]), use_context=True)
@@ -27,6 +27,7 @@ def main():
 
     # dispatcher for chatgpt
     global chatgpt
+    chatgpt.current_model = "gemini"
     chatgpt = HKBU_ChatGPT()
     chatgpt_handler = MessageHandler(Filters.text & (~Filters.command), equiped_chatbot)
     dispatcher.add_handler(chatgpt_handler)
