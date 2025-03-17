@@ -27,7 +27,6 @@ def main():
 
     # dispatcher for chatgpt
     global chatgpt
-    chatgpt.current_model = "gemini"
     chatgpt = HKBU_ChatGPT()
     chatgpt_handler = MessageHandler(Filters.text & (~Filters.command), equiped_chatbot)
     dispatcher.add_handler(chatgpt_handler)
@@ -75,6 +74,9 @@ def split_message(text, max_length=TELEGRAM_MAX_MESSAGE_LENGTH):
     
 def equiped_chatbot(update, context):
     global chatgpt
+    if not hasattr(chatgpt, 'current_model'):
+        chatgpt.current_model = "gemini"
+        logging.warning("chatgpt.current_model was not set. Defaulting to 'gemini'.")
     reply_message = chatgpt.submit(update.message.text, chatgpt.current_model)
     logging.info("Update: " + str(update))
     logging.info("Context: " + str(context))
