@@ -55,7 +55,14 @@ class HKBU_ChatGPT():
                 "contents": [{
                     "role": "user",
                     "parts": [ { "text": message } ]
-                }]
+                }],
+                "generationConfig": {
+                    "temperature": 1,
+                    "topK": 40,
+                    "topP": 0.95,
+                    "maxOutputTokens": 4096,
+                    "responseMimeType": "text/plain"
+                }
             }
             response = requests.post(gemini_url, json=payload, headers=headers)
             if response.status_code == 200:
