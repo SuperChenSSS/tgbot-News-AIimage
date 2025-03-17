@@ -8,8 +8,6 @@ from ChatGPT_HKBU import HKBU_ChatGPT
 
 global redis1
 def main():
-    #config = configparser.ConfigParser()
-    #config.read('config.ini')
     updater = Updater(token=(os.environ["ACCESS_TOKEN_TG"]), use_context=True)
     dispatcher = updater.dispatcher
     global redis1
@@ -54,9 +52,12 @@ def equiped_chatbot(update, context):
 def echo(update, context):
     """Echo the user message in lowercase.
     
-    :param: args[0] as message
+    :param update: Make update.message.text to upper case
+    :type update: str
+    :param context: Reply with context
+    :type context: str
     :return: lowercase of the message
-    :rtype: send_message
+    :rtype: str
     """
     reply_message = update.message.text.upper()
     logging.info("Update: " + str(update))
@@ -70,10 +71,12 @@ def help_command(update: Update, context: CallbackContext) -> None:
     update.message.reply_text('Helping you helping you.')
 
 def hello(update: Update, context: CallbackContext) -> None:
-    """Greetings with hello with /hello <keyword>.
+    """Greetings with hello with /hello "keyword".
 
-    :param: None
-    :return context: Good day, <keyword>!
+    :param update: not using the input for this function
+    :type update: str
+    :param context: Reply with Good day, "keyword"!
+    :type context: str
     """
     try:
         msg = context.args[0]
@@ -85,9 +88,10 @@ def hello(update: Update, context: CallbackContext) -> None:
 def add(update: Update, context: CallbackContext) -> None:
     """Add a message to DB when the command /add is issued.
 
-    :param: args[0] as the keyword
-    :return: You have said args[0] for <value> times.
-    :rtype: reply_text
+    :param update: args[0] as the keyword
+    :type update: str
+    :param context: Reply with You have said args[0] for "value" times.
+    :type context: str
     """
     try:
         global redis1
@@ -105,9 +109,10 @@ def add(update: Update, context: CallbackContext) -> None:
 def delete(update: Update, context: CallbackContext) -> None:
     """Delete a message when the command /delete is issued.
 
-    :param: args[0] as the keyword
-    :return: You have deleted <keyword>.
-    :rtype: reply_text
+    :param update: args[0] as the keyword
+    :type update: str
+    :param context: Reply with You have deleted "keyword".
+    :type context: str
     """
     try:
         logging.info("Delete action on: " + context.args[0])
@@ -121,9 +126,10 @@ def delete(update: Update, context: CallbackContext) -> None:
 def set(update: Update, context: CallbackContext) -> None:
     """Set args[0] to args[1] when the command /set is issued.
 
-    :param: args[0] as the keyword to be changed, args[1] as the new keyword
-    :return: args[0] changed to args[1]
-    :rtype: reply_text
+    :param update: args[0] as the keyword to be changed, args[1] as the new keyword
+    :type update: str
+    :param context: Reply with args[0] changed to args[1]
+    :type context: str
     """
     try:
         logging.info("Set action on: " + context.args[0] + " to " + context.args[1])
@@ -145,9 +151,10 @@ def set(update: Update, context: CallbackContext) -> None:
 def get(update: Update, context: CallbackContext) -> None:
     """Get the number of occurence with keyword: args[0] when the command /get is issued.
 
-    :param: args[0] as the keyword
-    :return: Number of occurence of the keyword.
-    :rtype: reply_text
+    :param update: args[0] as the keyword
+    :type update: str
+    :param context: Reply with Number of occurence of the keyword.
+    :type context: str
     """
     try:
         logging.info("Get action on: " + context.args[0])
