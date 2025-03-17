@@ -7,6 +7,8 @@ from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, Callb
 from ChatGPT_HKBU import HKBU_ChatGPT
 
 global redis1
+TELEGRAM_MAX_MESSAGE_LENGTH = os.environ.get("MAX_TOKEN")
+
 def main():
     updater = Updater(token=(os.environ["ACCESS_TOKEN_TG"]), use_context=True)
     dispatcher = updater.dispatcher
@@ -25,7 +27,6 @@ def main():
 
     # dispatcher for chatgpt
     global chatgpt
-    #chatgpt = HKBU_ChatGPT(config)
     chatgpt = HKBU_ChatGPT()
     chatgpt_handler = MessageHandler(Filters.text & (~Filters.command), equiped_chatbot)
     dispatcher.add_handler(chatgpt_handler)
@@ -37,17 +38,50 @@ def main():
     dispatcher.add_handler(CommandHandler("delete", delete))
     dispatcher.add_handler(CommandHandler("get", get))
     dispatcher.add_handler(CommandHandler("set", set))
+    dispatcher.add_handler(CommandHandler("model", set_model))
 
     # Start bot
     updater.start_polling()
     updater.idle()
 
+def set_model(update: Update, context: CallbackContext) -> None:
+    """Set the model to be used by the chatbot."""
+    global chatgpt
+    try:
+        model = context.args[0].lower()
+        if model in ["chatgpt", "gemini"]:
+            chatgpt.current_model = model
+            update.message.reply_text(f"Model set to {model}.")
+        else:
+            update.message.reply_text("Invalid model. Choose 'chatgpt' or 'gemini'.")
+    except (IndexError, ValueError):
+        update.message.reply_text('Usage: /model <chatgpt/gemini>')
+
+def split_message(text, max_length=TELEGRAM_MAX_MESSAGE_LENGTH):
+    """Splits a long message into multiple messages of a maximum length."""
+    if len(text) <= max_length:
+        return [text]
+    else:
+        parts = []
+        while len(text) > max_length:
+            split_point = text.rfind(' ', 0, max_length)  # Find a space to split at
+            if split_point == -1:
+                split_point = max_length # if no space, just split at max length
+            parts.append(text[:split_point])
+            text = text[split_point:]
+        parts.append(text)
+        return parts
+    
 def equiped_chatbot(update, context):
     global chatgpt
-    reply_message = chatgpt.submit(update.message.text)
+    reply_message = chatgpt.submit(update.message.text, chatgpt.current_model)
     logging.info("Update: " + str(update))
     logging.info("Context: " + str(context))
-    context.bot.send_message(chat_id=update.effective_chat.id, text=reply_message)
+    # Split the message if it's too long
+    message_parts = split_message(reply_message)
+    for part in message_parts:
+        context.bot.send_message(chat_id=update.effective_chat.id, text=part)
+    # context.bot.send_message(chat_id=update.effective_chat.id, text=reply_message)
 
 def echo(update, context):
     """Echo the user message in lowercase.
