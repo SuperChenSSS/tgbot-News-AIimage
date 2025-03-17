@@ -4,7 +4,7 @@
 #
 
 app = 'chatbot-cmy'
-primary_region = 'hkg'
+primary_region = 'sin'
 
 [build]
   builder = 'paketobuildpacks/builder:base'

@@ -12,36 +12,68 @@ class HKBU_ChatGPT():
     def __init__(self):
         pass
     
-    def submit(self, message):
-        '''Submit a message to the HKBU ChatGPT service and get a response.
+    def submit(self, message, model="gemini"):
+        """
+        Submits a message to either ChatGPT or Gemini API based on the specified model type.
 
-        :param message: The message to send to the ChatGPT service.
+        :param message: The message to send to the API.
         :type message: str
-        :return: The response from the ChatGPT service, or an error message.
+        :param model: The type of model to use ("chatgpt" or "gemini"). Defaults to "chatgpt".
+        :type model: str
+        :return: The response from the API, or an error message.
         :rtype: str
-        '''
-        conversation = [{"role": "user", "content": message}]
+        :raises ValueError: If an unsupported model type is provided.
+        """
+        if model.lower() == "chatgpt":
+            conversation = [{"role": "user", "content": message}]
+            url = ((os.environ['BASICURL']) +
+                   "/deployments/" + (os.environ['MODELNAME']) +
+                   "/chat/completions/?api-version=" +
+                   (os.environ['APIVERSION']))
+            headers = {
+                'Content-Type': 'application/json',
+                'api-key': (os.environ['ACCESS_TOKEN_LLM'])
+            }
+            payload = {'messages': conversation}
+            response = requests.post(url, json=payload, headers=headers)
+            if response.status_code == 200:
+                data = response.json()
+                return data['choices'][0]['message']['content']
+            else:
+                return f"ChatGPT Error: {response.status_code} - {response.text}"
 
-        url = ((os.environ['BASICURL']) +
-               "/deployments/" + (os.environ['MODELNAME']) +
-               "/chat/completions/?api-version=" +
-               (os.environ['APIVERSION']))
-        
-        headers = {
-            'Content-Type': 'application/json',
-            'api-key': (os.environ['ACCESS_TOKEN_LLM']) }
-        payload = { 'messages': conversation }
-        response = requests.post(url, json=payload, headers=headers)
-        if response.status_code == 200:
-            data = response.json()
-            return data['choices'][0]['message']['content']
+        elif model.lower() == "gemini":
+            # Assuming you have environment variables for Gemini API
+            gemini_api_key = os.environ.get("GEMINI_API_KEY")
+            gemini_model = os.environ.get("GEMINI_MODEL")
+            if not gemini_api_key:
+                return "Error: GEMINI_API_KEY environment variable not set."
+            
+            gemini_url = f"https://generativelanguage.googleapis.com/v1beta/models/{gemini_model}:generateContent?key={gemini_api_key}"
+            headers = {'Content-Type': 'application/json'}
+            payload = {
+                "contents": [{
+                    "role": "user",
+                    "parts": [ { "text": message } ]
+                }]
+            }
+            response = requests.post(gemini_url, json=payload, headers=headers)
+            if response.status_code == 200:
+                data = response.json()
+                try:
+                    return data['candidates'][0]['content']['parts'][0]['text']
+                except (KeyError, IndexError):
+                    return "Error: Unexpected response format from Gemini API."
+            else:
+                return f"Gemini Error: {response.status_code} - {response.text}"
+
         else:
-            return 'Error:', response
+            raise ValueError(f"Unsupported model type: {model}. Supported types are 'chatgpt' and 'gemini'.")
         
 if __name__ == "__main__":
     ChatGPT_test = HKBU_ChatGPT()
 
     while True:
-        user_input = input("Typing anything to ChatGPT:\t")
+        user_input = input("Typing anything:\t")
         response = ChatGPT_test.submit(user_input)
         print(response)
