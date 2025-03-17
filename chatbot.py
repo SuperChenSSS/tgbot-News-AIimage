@@ -2,9 +2,10 @@
 import os
 import logging
 import redis
-from telegram import Update, ParseMode
+from telegram import Update, ParseMode, BotCommand
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
 from ChatGPT_HKBU import HKBU_ChatGPT
+import re
 
 global redis1
 TELEGRAM_MAX_MESSAGE_LENGTH = int(os.environ.get("MAX_TOKEN"))
@@ -40,9 +41,24 @@ def main():
     dispatcher.add_handler(CommandHandler("set", set))
     dispatcher.add_handler(CommandHandler("model", set_model))
 
+    # Set the bot menu
+    set_bot_commands(updater.bot)
     # Start bot
     updater.start_polling()
     updater.idle()
+
+def set_bot_commands(bot):
+    """Sets the bot's menu commands."""
+    bot_commands = [
+        BotCommand("/help", "Show help message"),
+        BotCommand("/add", "Add a keyword to the database"),
+        BotCommand("/delete", "Delete a keyword from the database"),
+        BotCommand("/get", "Get the count of a keyword"),
+        BotCommand("/set", "Change a keyword to another"),
+        BotCommand("/hello", "Greet the user"),
+        BotCommand("/model", "Select the model to use (chatgpt/gemini)"),
+    ]
+    bot.set_my_commands(bot_commands)
 
 def set_model(update: Update, context: CallbackContext) -> None:
     """Set the model to be used by the chatbot."""
@@ -72,6 +88,11 @@ def split_message(text, max_length=TELEGRAM_MAX_MESSAGE_LENGTH):
         parts.append(text)
         return parts
     
+def escape_markdown_v2(text):
+    """Escapes reserved characters for Telegram's MarkdownV2."""
+    escape_chars = r"_\*\[\]\(\)~`>#\+\-=|\.!{}"
+    return re.sub(f"([{re.escape(escape_chars)}])", r"\\\1", text)
+
 def equiped_chatbot(update, context):
     global chatgpt
     if not hasattr(chatgpt, 'current_model'):
@@ -83,7 +104,8 @@ def equiped_chatbot(update, context):
     # Split the message if it's too long
     message_parts = split_message(reply_message)
     for part in message_parts:
-        context.bot.send_message(chat_id=update.effective_chat.id, text=part, parse_mode=ParseMode.MARKDOWN_V2)
+        escaped_part = escape_markdown_v2(part)
+        context.bot.send_message(chat_id=update.effective_chat.id, text=escaped_part, parse_mode=ParseMode.MARKDOWN_V2)
     # context.bot.send_message(chat_id=update.effective_chat.id, text=reply_message)
 
 def echo(update, context):
