@@ -38,7 +38,7 @@ jobs:
             - uses: actions/checkout@v3
             - uses: superfly/flyctl-actions/setup-flyctl@master
             - name: Deploy to Fly
-              run: fly deploy --remote-only --ha=False --image registry.fly.io/$APP -a $APP
+              run: flyctl deploy --remote-only --ha=False --image registry.fly.io/$APP -a $APP
               working-directory: .
             - name: Limit to 1 VM
               run: flyctl scale count 1 -a $APP
