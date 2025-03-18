@@ -7,7 +7,7 @@ app = 'chatbot-cmy'
 primary_region = 'sin'
 
 [build]
-  builder = 'Dockerfile'
+  dockerfile = 'Dockerfile'
 
 [env]
   PORT = '8080'
