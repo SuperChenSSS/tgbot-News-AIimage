@@ -39,7 +39,7 @@ jobs:
             - uses: superfly/flyctl-actions/setup-flyctl@master
             - name: Docker Build and Publish
               run: |
-                flyctl auth docker --access-token $FLY_API_TOKEN
+                flyctl auth docker --access-token "$FLY_API_TOKEN"
                 docker build -t registry.fly.io/$APP .
                 docker push registry.fly.io/$APP
             - name: Deploy to Fly
