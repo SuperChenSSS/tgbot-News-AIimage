@@ -37,6 +37,11 @@ jobs:
         steps:
             - uses: actions/checkout@v3
             - uses: superfly/flyctl-actions/setup-flyctl@master
+            - name: Docker Build and Publish
+              run: |
+                flyctl auth docker --access-token $FLY_API_TOKEN
+                docker build -t registry.fly.io/$APP .
+                docker push registry.fly.io/$APP
             - name: Deploy to Fly
               run: flyctl deploy --remote-only --ha=False --image registry.fly.io/$APP -a $APP
               working-directory: .
