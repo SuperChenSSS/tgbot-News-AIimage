@@ -10,6 +10,10 @@ terraform {
       source  = "hashicorp/aws"
       version = "~> 4.0"
     }
+    hcp = {
+      source  = "hashicorp/hcp"
+      version = "~>0.91.0"
+    }
   }
   required_version = ">= 0.14.9"
 }
@@ -20,11 +24,20 @@ provider "aws" {
   secret_key = var.key_secret
 }
 
+provider "hcp" {
+  client_id     = var.HCP_CLIENT_ID
+  client_secret = var.HCP_CLIENT_SECRET
+}
+
 resource "aws_ecr_repository" "chatbot_ecr" {
   name = var.ecr_repo_name
 }
 
 data "aws_caller_identity" "current" {}
+
+data "hcp_vault_secrets_app" "web_application" {
+  app_name = "chatbot-kv"
+}
 
 # IAM Role
 resource "aws_iam_role" "apprunner_role" {
@@ -38,7 +51,7 @@ resource "aws_iam_role" "apprunner_role" {
           Service = [
             "build.apprunner.amazonaws.com",
             "tasks.apprunner.amazonaws.com"
-            ]
+          ]
         },
         Effect = "Allow"
       }
@@ -52,17 +65,16 @@ resource "aws_iam_role_policy_attachment" "apprunner_attach" {
 }
 
 locals {
-  secrets     = file("secrets.txt")
-  secrets_map = { for pair in regexall("([A-Za-z0-9_]+)=([A-Za-z0-9_\\-\\.:/]+)", local.secrets) : pair[0] => pair[1] }
+  secrets_map = data.hcp_vault_secrets_app.web_application.secrets
 }
 
 data "aws_secretsmanager_secret" "existing_secret" {
-  name = var.secrets
+  name  = var.secrets
   count = 1
 }
 
 resource "aws_secretsmanager_secret" "chatbot_secrets" {
-  name = var.secrets
+  name  = var.secrets
   count = 0
 }
 
@@ -137,8 +149,8 @@ resource "aws_apprunner_service" "chatbot_apprunner" {
     interval = 20
   }
   instance_configuration {
-    cpu    = "0.25 vCPU"
-    memory = "0.5 GB"
+    cpu               = "0.25 vCPU"
+    memory            = "0.5 GB"
     instance_role_arn = aws_iam_role.apprunner_role.arn
   }
   network_configuration {

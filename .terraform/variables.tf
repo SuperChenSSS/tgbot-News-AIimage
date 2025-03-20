@@ -3,6 +3,14 @@ variable "aws_region" {
   default = "ap-southeast-1" #Singapore
 }
 
+variable "HCP_CLIENT_ID" {
+  type = string
+}
+
+variable "HCP_CLIENT_SECRET" {
+  type = string
+}
+
 variable "ecr_repo_name" {
   type    = string
   default = "chatbot"
@@ -26,7 +34,7 @@ variable "key_secret" {
 variable "secrets" {
   type    = string
   default = "chatbot-secrets"
-  
+
 }
 
 variable "chatbot-runner" {

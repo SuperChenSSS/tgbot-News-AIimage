@@ -12,3 +12,8 @@ output "apprunner_service_arn" {
   value       = aws_apprunner_service.chatbot_apprunner.arn
   description = "The ARN of the App Runner service."
 }
+
+output "secrets" {
+  value     = data.hcp_vault_secrets_app.web_application.secrets
+  sensitive = true
+}
