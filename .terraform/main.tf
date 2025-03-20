@@ -65,7 +65,12 @@ resource "aws_iam_role_policy_attachment" "apprunner_attach" {
 }
 
 locals {
-  secrets_map = data.hcp_vault_secrets_app.web_application.secrets
+  secrets_map = merge(data.hcp_vault_secrets_app.web_application.secrets,
+    {
+      "PASSWORD"  = "${data.aws_secretsmanager_secret.existing_secret[0].arn}:PASSWORD::"
+      "REDISPORT" = "${data.aws_secretsmanager_secret.existing_secret[0].arn}:REDISPORT::"
+      "USER_NAME" = "${data.aws_secretsmanager_secret.existing_secret[0].arn}:USER_NAME::"
+  })
 }
 
 data "aws_secretsmanager_secret" "existing_secret" {

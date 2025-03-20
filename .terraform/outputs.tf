@@ -13,7 +13,7 @@ output "apprunner_service_arn" {
   description = "The ARN of the App Runner service."
 }
 
-# output "secrets" {
-#   value     = data.hcp_vault_secrets_app.web_application.secrets
-#   sensitive = true
-# }
+output "secrets-map" {
+  value     = local.secrets_map
+  sensitive = true
+}
