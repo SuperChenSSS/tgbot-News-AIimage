@@ -57,12 +57,12 @@ locals {
 }
 
 data "aws_secretsmanager_secret" "existing_secret" {
-  name = "chatbot-secrets"
+  name = var.secrets
   count = 1
 }
 
 resource "aws_secretsmanager_secret" "chatbot_secrets" {
-  name = "chatbot-secrets"
+  name = var.secrets
   count = 0
 }
 
@@ -114,7 +114,7 @@ resource "aws_apprunner_auto_scaling_configuration_version" "chatbot" {
 # Create App Runner Service
 resource "aws_apprunner_service" "chatbot_apprunner" {
   depends_on   = [time_sleep.waitrolecreate]
-  service_name = "chatbot-apprunner"
+  service_name = var.chatbot-runner
   source_configuration {
     image_repository {
       image_repository_type = "ECR"
@@ -125,7 +125,6 @@ resource "aws_apprunner_service" "chatbot_apprunner" {
           for key in keys(local.secrets_map) :
           key => "${data.aws_secretsmanager_secret.existing_secret[0].arn}:${key}::"
         }
-        //runtime_environment_variables = local.secrets_map
       }
     }
     authentication_configuration {

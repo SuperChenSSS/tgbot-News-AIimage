@@ -22,3 +22,14 @@ variable "key_secret" {
   type    = string
   default = ""
 }
+
+variable "secrets" {
+  type    = string
+  default = "chatbot-secrets"
+  
+}
+
+variable "chatbot-runner" {
+  type    = string
+  default = "chatbot-apprunner"
+}
