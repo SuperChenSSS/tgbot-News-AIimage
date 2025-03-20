@@ -13,12 +13,12 @@ variable "image_name" {
   default = "chatbot"
 }
 
-# variable "key_id" {
-#   type    = string
-#   default = ""
-# }
+variable "key_id" {
+  type    = string
+  default = ""
+}
 
-# variable "key_secret" {
-#   type    = string
-#   default = ""
-# }
+variable "key_secret" {
+  type    = string
+  default = ""
+}

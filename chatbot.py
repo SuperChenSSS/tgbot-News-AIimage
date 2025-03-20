@@ -6,9 +6,18 @@ from telegram import Update, ParseMode, BotCommand
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
 from ChatGPT_HKBU import HKBU_ChatGPT
 import re
+from flask import Flask, Response
+import threading
 
 global redis1
 TELEGRAM_MAX_MESSAGE_LENGTH = int(os.environ.get("MAX_TOKEN"))
+
+app = Flask(__name__)  # Flask app instance
+
+@app.route("/health_cmy")
+def health_check():
+    """Health check endpoint."""
+    return Response("OK", status=200)
 
 def main():
     updater = Updater(token=(os.environ["ACCESS_TOKEN_TG"]), use_context=True)
@@ -40,6 +49,11 @@ def main():
     dispatcher.add_handler(CommandHandler("get", get))
     dispatcher.add_handler(CommandHandler("set", set))
     dispatcher.add_handler(CommandHandler("model", set_model))
+
+    # Run the Flask app in a separate thread
+    flask_thread = threading.Thread(target=app.run, kwargs={'host': '0.0.0.0', 'port': 80, 'debug':False, 'use_reloader': False})
+    flask_thread.daemon = True  # Daemonize thread
+    flask_thread.start()
 
     # Set the bot menu
     set_bot_commands(updater.bot)

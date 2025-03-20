@@ -1,4 +1,4 @@
-FROM python:3.12-slim-bookworm
+FROM --platform=linux/amd64 python:3.12-slim
 WORKDIR /APP
 COPY . /APP
 RUN pip install update

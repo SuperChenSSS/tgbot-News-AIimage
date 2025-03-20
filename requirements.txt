@@ -3,3 +3,4 @@ redis==5.2.1
 requests==2.32.3
 telegram==0.0.1
 urllib3==1.26.18
+flask
