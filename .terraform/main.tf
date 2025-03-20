@@ -35,7 +35,10 @@ resource "aws_iam_role" "apprunner_role" {
       {
         Action = "sts:AssumeRole",
         Principal = {
-          Service = "build.apprunner.amazonaws.com"
+          Service = [
+            "build.apprunner.amazonaws.com",
+            "tasks.apprunner.amazonaws.com"
+            ]
         },
         Effect = "Allow"
       }
@@ -51,6 +54,44 @@ resource "aws_iam_role_policy_attachment" "apprunner_attach" {
 locals {
   secrets     = file("secrets.txt")
   secrets_map = { for pair in regexall("([A-Za-z0-9_]+)=([A-Za-z0-9_\\-\\.:/]+)", local.secrets) : pair[0] => pair[1] }
+}
+
+data "aws_secretsmanager_secret" "existing_secret" {
+  name = "chatbot-secrets"
+  count = 1
+}
+
+resource "aws_secretsmanager_secret" "chatbot_secrets" {
+  name = "chatbot-secrets"
+  count = 0
+}
+
+resource "aws_secretsmanager_secret_version" "chatbot_secrets_version" {
+  secret_id     = data.aws_secretsmanager_secret.existing_secret[0].id
+  secret_string = jsonencode(local.secrets_map)
+}
+
+resource "aws_iam_policy" "secrets_access" {
+  name        = "app-runner-secrets-access"
+  description = "Allow App Runner to access secrets"
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Action = [
+          "secretsmanager:GetSecretValue",
+        ],
+        Effect   = "Allow",
+        Resource = data.aws_secretsmanager_secret.existing_secret[0].arn
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "secrets_attach" {
+  role       = aws_iam_role.apprunner_role.id
+  policy_arn = aws_iam_policy.secrets_access.arn
 }
 
 resource "time_sleep" "waitrolecreate" {
@@ -79,8 +120,12 @@ resource "aws_apprunner_service" "chatbot_apprunner" {
       image_repository_type = "ECR"
       image_identifier      = "${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.aws_region}.amazonaws.com/${var.ecr_repo_name}:latest"
       image_configuration {
-        port                          = "80"
-        runtime_environment_variables = local.secrets_map
+        port = "80"
+        runtime_environment_secrets = {
+          for key in keys(local.secrets_map) :
+          key => "${data.aws_secretsmanager_secret.existing_secret[0].arn}:${key}::"
+        }
+        //runtime_environment_variables = local.secrets_map
       }
     }
     authentication_configuration {
@@ -93,8 +138,9 @@ resource "aws_apprunner_service" "chatbot_apprunner" {
     interval = 20
   }
   instance_configuration {
-    cpu = "0.25 vCPU"
+    cpu    = "0.25 vCPU"
     memory = "0.5 GB"
+    instance_role_arn = aws_iam_role.apprunner_role.arn
   }
   network_configuration {
     egress_configuration {
