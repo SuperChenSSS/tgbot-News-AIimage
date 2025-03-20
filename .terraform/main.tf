@@ -12,7 +12,7 @@ terraform {
     }
     hcp = {
       source  = "hashicorp/hcp"
-      version = "~>0.91.0"
+      version = "~>0.104.0"
     }
   }
   required_version = ">= 0.14.9"
@@ -65,22 +65,12 @@ resource "aws_iam_role_policy_attachment" "apprunner_attach" {
 }
 
 locals {
-  secrets_map = merge(data.hcp_vault_secrets_app.web_application.secrets,
-    {
-      "PASSWORD"  = "${data.aws_secretsmanager_secret.existing_secret[0].arn}:PASSWORD::"
-      "REDISPORT" = "${data.aws_secretsmanager_secret.existing_secret[0].arn}:REDISPORT::"
-      "USER_NAME" = "${data.aws_secretsmanager_secret.existing_secret[0].arn}:USER_NAME::"
-  })
+  secrets_map = data.hcp_vault_secrets_app.web_application.secrets
 }
 
 data "aws_secretsmanager_secret" "existing_secret" {
   name  = var.secrets
   count = 1
-}
-
-resource "aws_secretsmanager_secret" "chatbot_secrets" {
-  name  = var.secrets
-  count = 0
 }
 
 resource "aws_secretsmanager_secret_version" "chatbot_secrets_version" {
