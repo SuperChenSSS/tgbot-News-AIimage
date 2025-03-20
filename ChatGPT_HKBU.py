@@ -18,7 +18,7 @@ class HKBU_ChatGPT():
 
         :param message: The message to send to the API.
         :type message: str
-        :param model: The type of model to use ("chatgpt" or "gemini"). Defaults to "chatgpt".
+        :param model: The type of model to use ("chatgpt" or "gemini"). Defaults to "gemini".
         :type model: str
         :return: The response from the API, or an error message.
         :rtype: str

@@ -102,11 +102,6 @@ def split_message(text, max_length=TELEGRAM_MAX_MESSAGE_LENGTH):
         parts.append(text)
         return parts
     
-def escape_markdown_v2(text):
-    """Escapes reserved characters for Telegram's MarkdownV2."""
-    escape_chars = r"_\*\[\]\(\)~`>#\+\-=|\.!{}"
-    return re.sub(f"([{re.escape(escape_chars)}])", r"\\\1", text)
-
 def equiped_chatbot(update, context):
     global chatgpt
     if not hasattr(chatgpt, 'current_model'):
@@ -118,8 +113,7 @@ def equiped_chatbot(update, context):
     # Split the message if it's too long
     message_parts = split_message(reply_message)
     for part in message_parts:
-        escaped_part = escape_markdown_v2(part)
-        context.bot.send_message(chat_id=update.effective_chat.id, text=escaped_part, parse_mode=ParseMode.MARKDOWN_V2)
+        context.bot.send_message(chat_id=update.effective_chat.id, text=part)
     # context.bot.send_message(chat_id=update.effective_chat.id, text=reply_message)
 
 def echo(update, context):
