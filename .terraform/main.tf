@@ -28,6 +28,10 @@ module "my_hcp" {
   source = "./modules/hcp"
 }
 
+module "my_db" {
+  source = "./modules/db"
+}
+
 resource "aws_ecr_repository" "chatbot_ecr" {
   name = var.ecr_repo_name
 }
