@@ -7,16 +7,17 @@ data "aws_secretsmanager_secret_version" "db_password" {
 }
 
 resource "aws_db_instance" "default" {
-  allocated_storage    = 20
-  engine               = "mysql"
-  engine_version       = "8.0"
-  instance_class       = "db.t3.micro"
-  db_name                 = "chatbot_db"
-  password = jsondecode(data.aws_secretsmanager_secret_version.db_password.secret_string).DB_PASSWORD
-  port                 = 10086
-  publicly_accessible = true
-  skip_final_snapshot = true
-  username             = "chatbot_user"
+  allocated_storage      = 20
+  engine                 = "mysql"
+  engine_version         = "8.0"
+  instance_class         = "db.t3.micro"
+  db_name                = "chatbot_db"
+  identifier             = "chatbot-db"
+  password               = jsondecode(data.aws_secretsmanager_secret_version.db_password.secret_string).DB_PASSWORD
+  port                   = 10086
+  publicly_accessible    = true
+  skip_final_snapshot    = true
+  username               = "chatbot_user"
   vpc_security_group_ids = [aws_security_group.allow_tls.id]
 }
 
