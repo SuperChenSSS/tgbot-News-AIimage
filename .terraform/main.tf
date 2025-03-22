@@ -24,9 +24,8 @@ provider "aws" {
   secret_key = var.key_secret
 }
 
-provider "hcp" {
-  client_id     = var.HCP_CLIENT_ID
-  client_secret = var.HCP_CLIENT_SECRET
+module "my_hcp" {
+  source = "./modules/hcp"
 }
 
 resource "aws_ecr_repository" "chatbot_ecr" {
@@ -34,10 +33,6 @@ resource "aws_ecr_repository" "chatbot_ecr" {
 }
 
 data "aws_caller_identity" "current" {}
-
-data "hcp_vault_secrets_app" "web_application" {
-  app_name = "chatbot-kv"
-}
 
 # IAM Role
 resource "aws_iam_role" "apprunner_role" {
@@ -64,10 +59,6 @@ resource "aws_iam_role_policy_attachment" "apprunner_attach" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSAppRunnerServicePolicyForECRAccess"
 }
 
-locals {
-  secrets_map = data.hcp_vault_secrets_app.web_application.secrets
-}
-
 data "aws_secretsmanager_secret" "existing_secret" {
   name  = var.secrets
   count = 1
@@ -75,7 +66,7 @@ data "aws_secretsmanager_secret" "existing_secret" {
 
 resource "aws_secretsmanager_secret_version" "chatbot_secrets_version" {
   secret_id     = data.aws_secretsmanager_secret.existing_secret[0].id
-  secret_string = jsonencode(local.secrets_map)
+  secret_string = jsonencode(module.my_hcp.secrets_map)
 }
 
 resource "aws_iam_policy" "secrets_access" {
@@ -129,7 +120,7 @@ resource "aws_apprunner_service" "chatbot_apprunner" {
       image_configuration {
         port = "80"
         runtime_environment_secrets = {
-          for key in keys(local.secrets_map) :
+          for key in keys(module.my_hcp.secrets_map) :
           key => "${data.aws_secretsmanager_secret.existing_secret[0].arn}:${key}::"
         }
       }

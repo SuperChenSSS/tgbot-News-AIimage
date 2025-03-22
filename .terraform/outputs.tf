@@ -14,6 +14,6 @@ output "apprunner_service_arn" {
 }
 
 output "secrets-map" {
-  value     = local.secrets_map
+  value     = module.my_hcp.secrets_map
   sensitive = true
 }
