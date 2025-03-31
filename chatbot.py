@@ -113,7 +113,10 @@ def equiped_chatbot(update, context):
     message_text = update.message.text
     if any(keyword in message_text.lower() for keyword in ["image", "photo", "图片"]):
         context.bot.send_message(chat_id=update.effective_chat.id, text="Image Generation in Progress, this could take about 50 seconds...")
-        s3_path = chatgpt.submit(message_text, "image")
+        try:
+            s3_path = chatgpt.submit(message_text, "image")
+        except Exception as e:
+            context.bot.send_message(chat_id=update.effective_chat.id, text=f"Error: {e}")
         if s3_path:
             s3 = s3fs.S3FileSystem(anon=False)
             with s3.open(s3_path, 'rb') as f:
