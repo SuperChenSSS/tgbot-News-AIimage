@@ -111,7 +111,7 @@ def equiped_chatbot(update, context):
         chatgpt.current_model = "gemini"
         logging.warning("chatgpt.current_model was not set. Defaulting to 'gemini'.")
     message_text = update.message.text
-    if any(keyword in message_text.lower() for keyword in ["image", "photo", "图片"]):
+    if any(keyword in message_text.lower() for keyword in os.environ.get("IMG_WORDS")):
         context.bot.send_message(chat_id=update.effective_chat.id, text="Image Generation in Progress, this could take about 50 seconds...")
         try:
             s3_path = chatgpt.submit(message_text, "image")
