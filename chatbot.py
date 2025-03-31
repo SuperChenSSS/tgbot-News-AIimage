@@ -8,7 +8,10 @@ from ChatGPT_HKBU import HKBU_ChatGPT
 import re
 from flask import Flask, Response
 import threading
+from dotenv import load_dotenv
+import s3fs
 
+#load_dotenv(".terraform/secrets.txt")
 global redis1
 TELEGRAM_MAX_MESSAGE_LENGTH = int(os.environ.get("MAX_TOKEN"))
 
@@ -107,14 +110,26 @@ def equiped_chatbot(update, context):
     if not hasattr(chatgpt, 'current_model'):
         chatgpt.current_model = "gemini"
         logging.warning("chatgpt.current_model was not set. Defaulting to 'gemini'.")
-    reply_message = chatgpt.submit(update.message.text, chatgpt.current_model)
-    logging.info("Update: " + str(update))
-    logging.info("Context: " + str(context))
-    # Split the message if it's too long
-    message_parts = split_message(reply_message)
-    for part in message_parts:
-        context.bot.send_message(chat_id=update.effective_chat.id, text=part)
-    # context.bot.send_message(chat_id=update.effective_chat.id, text=reply_message)
+    message_text = update.message.text
+    if any(keyword in message_text.lower() for keyword in ["image", "photo", "图片"]):
+        context.bot.send_message(chat_id=update.effective_chat.id, text="Image Generation in Progress, this could take about 50 seconds...")
+        s3_path = chatgpt.submit(message_text, "image")
+        if s3_path:
+            s3 = s3fs.S3FileSystem(anon=False)
+            with s3.open(s3_path, 'rb') as f:
+                photo_data = f.read()
+            context.bot.send_photo(chat_id=update.effective_chat.id, photo=photo_data, timeout=60)
+        else:
+            context.bot.send_message(chat_id=update.effective_chat.id, text="Sorry, I can't generate an image for that.")
+    else:
+        reply_message = chatgpt.submit(message_text, chatgpt.current_model)
+        logging.info("Update: " + str(update))
+        logging.info("Context: " + str(context))
+        # Split the message if it's too long
+        message_parts = split_message(reply_message)
+        for part in message_parts:
+            context.bot.send_message(chat_id=update.effective_chat.id, text=part)
+        # context.bot.send_message(chat_id=update.effective_chat.id, text=reply_message)
 
 def echo(update, context):
     """Echo the user message in lowercase.

@@ -7,3 +7,4 @@ tmp_docs/*
 .terraform/.terraform.lock.hcl
 .terraform/terraform.tfstate
 .terraform/terraform.tfstate.backup
+__pycache__/*

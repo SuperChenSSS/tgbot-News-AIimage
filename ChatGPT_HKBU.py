@@ -1,6 +1,8 @@
 import configparser
 import requests
 import os
+import ai_image
+from dotenv import load_dotenv
 
 class HKBU_ChatGPT():
     '''
@@ -73,14 +75,17 @@ class HKBU_ChatGPT():
                     return "Error: Unexpected response format from Gemini API."
             else:
                 return f"Gemini Error: {response.status_code} - {response.text}"
-
+        elif model.lower() == "image":
+            s3_path =  ai_image.generate_img(message)
+            return s3_path
         else:
-            raise ValueError(f"Unsupported model type: {model}. Supported types are 'chatgpt' and 'gemini'.")
+            raise ValueError(f"Unsupported model type: {model}. Supported types are 'chatgpt', 'gemini' and 'image'.")
         
 if __name__ == "__main__":
     ChatGPT_test = HKBU_ChatGPT()
+    #load_dotenv(".terraform/secrets.txt")
 
     while True:
         user_input = input("Typing anything:\t")
-        response = ChatGPT_test.submit(user_input)
+        response = ChatGPT_test.submit(user_input, model="gemini")
         print(response)
