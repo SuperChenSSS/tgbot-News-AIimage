@@ -10,7 +10,6 @@ from dotenv import load_dotenv
 # global redis1
 global mysql_con
 TELEGRAM_MAX_MESSAGE_LENGTH = int(os.environ.get("MAX_TOKEN"))
-ASK_MODEL, ASK_NUM, SUMMARY = range(3)
 
 app = Flask(__name__)  # Flask app instance
 
