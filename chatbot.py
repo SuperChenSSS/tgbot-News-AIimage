@@ -1,7 +1,5 @@
-#import configparser
 import os
 import logging
-import redis
 from telegram import Update, ParseMode, BotCommand
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
 from ChatGPT_HKBU import HKBU_ChatGPT
@@ -10,9 +8,14 @@ from flask import Flask, Response
 import threading
 from dotenv import load_dotenv
 import s3fs
+from mysql_db import connect_sql, fetch_data, insert_db
+import datetime
 
 #load_dotenv(".terraform/secrets.txt")
-global redis1
+# global redis1
+global mysql_con
+
+mysql_con = connect_sql()
 TELEGRAM_MAX_MESSAGE_LENGTH = int(os.environ.get("MAX_TOKEN"))
 
 app = Flask(__name__)  # Flask app instance
@@ -25,18 +28,11 @@ def health_check():
 def main():
     updater = Updater(token=(os.environ["ACCESS_TOKEN_TG"]), use_context=True)
     dispatcher = updater.dispatcher
-    global redis1
-    redis1 = redis.Redis(host=os.environ['HOST'], 
-                         password=os.environ['PASSWORD'],
-                         port=os.environ['REDISPORT'],
-                         decode_responses=(os.environ['DECODE_RESPONSES']),
-                         username=os.environ['USER_NAME']) 
+    global mysql_con
+    mysql_con = connect_sql()
                          
     # Logging
     logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
-    # Register dispatcher to handle message
-    # echo_handler = MessageHandler(Filters.text & (~Filters.command), echo)
-    # dispatcher.add_handler(echo_handler)
 
     # dispatcher for chatgpt
     global chatgpt
@@ -44,13 +40,7 @@ def main():
     chatgpt_handler = MessageHandler(Filters.text & (~Filters.command), equiped_chatbot)
     dispatcher.add_handler(chatgpt_handler)
 
-    # Add two different commands
-    dispatcher.add_handler(CommandHandler("add", add))
-    dispatcher.add_handler(CommandHandler("help", help_command))
-    dispatcher.add_handler(CommandHandler("hello", hello))
-    dispatcher.add_handler(CommandHandler("delete", delete))
-    dispatcher.add_handler(CommandHandler("get", get))
-    dispatcher.add_handler(CommandHandler("set", set))
+    # Add different commands
     dispatcher.add_handler(CommandHandler("model", set_model))
 
     # Run the Flask app in a separate thread
@@ -67,11 +57,6 @@ def main():
 def set_bot_commands(bot):
     """Sets the bot's menu commands."""
     bot_commands = [
-        BotCommand("/help", "Show help message"),
-        BotCommand("/add", "Add a keyword to the database"),
-        BotCommand("/delete", "Delete a keyword from the database"),
-        BotCommand("/get", "Get the count of a keyword"),
-        BotCommand("/set", "Change a keyword to another"),
         BotCommand("/hello", "Greet the user"),
         BotCommand("/model", "Select the model to use (chatgpt/gemini)"),
     ]
@@ -106,13 +91,15 @@ def split_message(text, max_length=TELEGRAM_MAX_MESSAGE_LENGTH):
         return parts
     
 def equiped_chatbot(update, context):
-    global chatgpt
+    global chatgpt, mysql_con
     if not hasattr(chatgpt, 'current_model'):
         chatgpt.current_model = "gemini"
         logging.warning("chatgpt.current_model was not set. Defaulting to 'gemini'.")
     message_text = update.message.text
-    if any(keyword in message_text.lower() for keyword in os.environ.get("IMG_WORDS")):
-        context.bot.send_message(chat_id=update.effective_chat.id, text="Image Generation in Progress, this could take about 50 seconds...")
+    img_keywords = os.environ.get("IMG_WORDS").replace("\"","").split(",")
+    # logging.info("Image Keywords: " + str(img_keywords))
+    if any(keyword in message_text.lower() for keyword in img_keywords):
+        context.bot.send_message(chat_id=update.effective_chat.id, text="Image Generation in Progress, this could take about 30 seconds...")
         try:
             s3_path = chatgpt.submit(message_text, "image")
         except Exception as e:
@@ -121,7 +108,11 @@ def equiped_chatbot(update, context):
             s3 = s3fs.S3FileSystem(anon=False)
             with s3.open(s3_path, 'rb') as f:
                 photo_data = f.read()
-            context.bot.send_photo(chat_id=update.effective_chat.id, photo=photo_data, timeout=60)
+            context.bot.send_photo(chat_id=update.effective_chat.id, photo=photo_data, timeout=70, caption="Prompt: " + message_text)
+            context.bot.send_message(chat_id=update.effective_chat.id, text="Image Generation Completed, now send to DB...")
+            timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            insert_db("ai_image", mysql_con, timestamp, message_text, s3_path)
+            context.bot.send_message(chat_id=update.effective_chat.id, text="DB Stored Successfully.")
         else:
             context.bot.send_message(chat_id=update.effective_chat.id, text="Sorry, I can't generate an image for that.")
     else:
@@ -132,7 +123,6 @@ def equiped_chatbot(update, context):
         message_parts = split_message(reply_message)
         for part in message_parts:
             context.bot.send_message(chat_id=update.effective_chat.id, text=part)
-        # context.bot.send_message(chat_id=update.effective_chat.id, text=reply_message)
 
 def echo(update, context):
     """Echo the user message in lowercase.
@@ -149,12 +139,6 @@ def echo(update, context):
     logging.info("Context: " + str(context))
     context.bot.send_message(chat_id=update.effective_chat.id, text=reply_message)
 
-# Define a few command handlers. These usually take the two arguments update and
-# context. Error handlers also receive the raised TelegramError object in error.
-def help_command(update: Update, context: CallbackContext) -> None:
-    """A placeholder when the command /help is issued."""
-    update.message.reply_text('Helping you helping you.')
-
 def hello(update: Update, context: CallbackContext) -> None:
     """Greetings with hello with /hello "keyword".
 
@@ -169,90 +153,6 @@ def hello(update: Update, context: CallbackContext) -> None:
         update.message.reply_text('Good day, ' + msg + '!')
     except (IndexError, ValueError):
         update.message.reply_text('Usage: /hello <keyword>')
-
-def add(update: Update, context: CallbackContext) -> None:
-    """Add a message to DB when the command /add is issued.
-
-    :param update: args[0] as the keyword
-    :type update: str
-    :param context: Reply with You have said args[0] for "value" times.
-    :type context: str
-    """
-    try:
-        global redis1
-        logging.info("Add action on: " + context.args[0])
-        msg = context.args[0] # /add keyword
-        redis1.incr(msg)
-        value = redis1.get(msg)
-        if isinstance(value, bytes):
-            value = value.decode('utf-8')
-        update.message.reply_text("You have said " + msg + " for " + value + " times.")
-
-    except (IndexError, ValueError):
-        update.message.reply_text('Usage: /add <keyword>')
-
-def delete(update: Update, context: CallbackContext) -> None:
-    """Delete a message when the command /delete is issued.
-
-    :param update: args[0] as the keyword
-    :type update: str
-    :param context: Reply with You have deleted "keyword".
-    :type context: str
-    """
-    try:
-        logging.info("Delete action on: " + context.args[0])
-        msg = context.args[0] # /delete keyword
-        redis1.delete(msg)
-        update.message.reply_text("You have deleted " + msg)
-
-    except (IndexError, ValueError):
-        update.message.reply_text('Usage: /delete <keyword>')
-
-def set(update: Update, context: CallbackContext) -> None:
-    """Set args[0] to args[1] when the command /set is issued.
-
-    :param update: args[0] as the keyword to be changed, args[1] as the new keyword
-    :type update: str
-    :param context: Reply with args[0] changed to args[1]
-    :type context: str
-    """
-    try:
-        logging.info("Set action on: " + context.args[0] + " to " + context.args[1])
-        keywordA = context.args[0] # /set keywordA keywordB
-        keywordB = context.args[1]
-        value = redis1.get(keywordA)
-        if value is None:
-            update.message.reply_text("No record for: " + keywordA)
-        else:
-            redis1.set(keywordB, value)
-            redis1.delete(keywordA)
-            update.message.reply_text(keywordA + " changed to " + keywordB)
-
-    except (IndexError, ValueError):
-        update.message.reply_text('Usage: /set <keywordA> <keywordB>')
-
-
-
-def get(update: Update, context: CallbackContext) -> None:
-    """Get the number of occurence with keyword: args[0] when the command /get is issued.
-
-    :param update: args[0] as the keyword
-    :type update: str
-    :param context: Reply with Number of occurence of the keyword.
-    :type context: str
-    """
-    try:
-        logging.info("Get action on: " + context.args[0])
-        msg = context.args[0] # /get keyword
-        value = redis1.get(msg)
-        if value is None:
-            update.message.reply_text("No record for: " + msg)
-        else:
-            if isinstance(value, bytes):
-                value = value.decode('utf-8')
-            update.message.reply_text("You have said " + msg + " for " + value + " times.")
-    except (IndexError, ValueError):
-        update.message.reply_text('Usage: /get <keyword>')
 
 if __name__ == '__main__':
     main()
