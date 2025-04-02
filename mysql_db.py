@@ -71,7 +71,7 @@ def gpt_summary(connection, table, number, model):
     try:
         query = f"SELECT * FROM {table} ORDER BY timestamp DESC limit {number};"
         data = fetch_data(connection, query)
-        prompt = f"Below are data stored from the database in JSON format, with table column (timestamp, command, filename):\n{data}\n Please summarize the commands and ignore other columns into sentences."
+        prompt = "Below are data stored from the database with format: (timestamp, command, filename):\n{data}\n Please summarize the command part into sentences."
         #print(prompt + model)
         response = chatgpt.submit(prompt, model)
         return response
