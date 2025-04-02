@@ -2,6 +2,7 @@ import pymysql
 from dotenv import load_dotenv
 import os
 import logging
+from ChatGPT_HKBU import HKBU_ChatGPT
 
 #load_dotenv(".terraform/secrets.txt")
 DB_HOST = os.environ.get("HOST")
@@ -62,6 +63,22 @@ def close_db(connection):
     if connection:
         connection.close()
 
+def gpt_summary(connection, table, number, model):
+    chatgpt = HKBU_ChatGPT()
+    if not connection:
+        logging.error("Failed to create MySQL connection. Application may not function correctly.")
+        return
+    try:
+        query = f"SELECT * FROM {table} ORDER BY timestamp DESC limit {number};"
+        data = fetch_data(connection, query)
+        prompt = f"Below are data stored from the database in JSON format, with table column (timestamp, command, filename):\n{data}\n Please summarize the command columns and ignore other columns into CREATIVE sentences."
+        #print(prompt + model)
+        response = chatgpt.submit(prompt, model)
+        return response
+    except Exception as e:
+        logging.error(f"Error summarizing data with {model}: {e}")
+        return f"Error summarizing data: {e}"
+
 def main():
     connection = connect_sql()
     if not connection:
@@ -70,15 +87,17 @@ def main():
 
     try:
         table = "ai_image"
-        timestamp = "2021-09-01 12:00:00"
-        command = "ls -l"
-        filename = "example.txt"
-        insert_db(table, connection, timestamp, command, filename)
+        # timestamp = "2021-09-01 12:00:00"
+        # command = "ls -l"
+        # filename = "example.txt"
+        # insert_db(table, connection, timestamp, command, filename)
 
-        # 示例查询
-        query = f"SELECT * FROM {table}"
-        data = fetch_data(connection, query)
-        print(data)
+        # # 示例查询
+        # query = f"SELECT * FROM {table}"
+        # data = fetch_data(connection, query)
+        # print(data)
+        response = gpt_summary(connection, table, 5, model="chatgpt")
+        print(response)
 
     except Exception as e:
         logging.error(f"Error in main: {e}")

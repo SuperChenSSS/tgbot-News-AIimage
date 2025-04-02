@@ -1,22 +1,16 @@
-import os
-import logging
+import os, logging, datetime, threading, s3fs, mysql_db
 from telegram import Update, ParseMode, BotCommand
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
 from ChatGPT_HKBU import HKBU_ChatGPT
-import re
 from flask import Flask, Response
-import threading
 from dotenv import load_dotenv
-import s3fs
-from mysql_db import connect_sql, fetch_data, insert_db
-import datetime
+
 
 #load_dotenv(".terraform/secrets.txt")
 # global redis1
 global mysql_con
-
-mysql_con = connect_sql()
 TELEGRAM_MAX_MESSAGE_LENGTH = int(os.environ.get("MAX_TOKEN"))
+ASK_MODEL, ASK_NUM, SUMMARY = range(3)
 
 app = Flask(__name__)  # Flask app instance
 
@@ -29,7 +23,7 @@ def main():
     updater = Updater(token=(os.environ["ACCESS_TOKEN_TG"]), use_context=True)
     dispatcher = updater.dispatcher
     global mysql_con
-    mysql_con = connect_sql()
+    mysql_con = mysql_db.connect_sql()
                          
     # Logging
     logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
@@ -39,9 +33,11 @@ def main():
     chatgpt = HKBU_ChatGPT()
     chatgpt_handler = MessageHandler(Filters.text & (~Filters.command), equiped_chatbot)
     dispatcher.add_handler(chatgpt_handler)
-
+    
     # Add different commands
+    dispatcher.add_handler(CommandHandler("hello", hello))
     dispatcher.add_handler(CommandHandler("model", set_model))
+    dispatcher.add_handler(CommandHandler("img_summary", img_summary))
 
     # Run the Flask app in a separate thread
     flask_thread = threading.Thread(target=app.run, kwargs={'host': '0.0.0.0', 'port': 80, 'debug':False, 'use_reloader': False})
@@ -54,9 +50,18 @@ def main():
     updater.start_polling()
     updater.idle()
 
+
+
+def img_summary(update: Update, context: CallbackContext):
+    global chatgpt
+    chatgpt.current_model = "chatgpt"
+    response = mysql_db.gpt_summary(mysql_con, "ai_image", 5, chatgpt.current_model)
+    update.message.reply_text(response)
+
 def set_bot_commands(bot):
     """Sets the bot's menu commands."""
     bot_commands = [
+        BotCommand("/img_summary", "Give a summary of AI generated images"),
         BotCommand("/hello", "Greet the user"),
         BotCommand("/model", "Select the model to use (chatgpt/gemini)"),
     ]
@@ -111,7 +116,7 @@ def equiped_chatbot(update, context):
             context.bot.send_photo(chat_id=update.effective_chat.id, photo=photo_data, timeout=70, caption="Prompt: " + message_text)
             context.bot.send_message(chat_id=update.effective_chat.id, text="Image Generation Completed, now send to DB...")
             timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            insert_db("ai_image", mysql_con, timestamp, message_text, s3_path)
+            mysql_db.insert_db("ai_image", mysql_con, timestamp, message_text, s3_path)
             context.bot.send_message(chat_id=update.effective_chat.id, text="DB Stored Successfully.")
         else:
             context.bot.send_message(chat_id=update.effective_chat.id, text="Sorry, I can't generate an image for that.")
