@@ -3,6 +3,7 @@ import json
 import logging
 import mysql_db
 import datetime
+from zoneinfo import ZoneInfo
 import os
 from dotenv import load_dotenv
 
@@ -15,7 +16,8 @@ payload = {}
 headers = {}
 
 def latest_news(con="", num_max=10):
-    current_date = datetime.datetime.today().strftime('%Y-%m-%d-%H')
+    current_date = datetime.datetime.now(ZoneInfo("Asia/Hong_Kong")).strftime('%Y-%m-%d-%H')
+
     news_dir = "news"
     is_dump = True
     if not os.path.exists(news_dir):
@@ -51,4 +53,4 @@ def latest_news(con="", num_max=10):
 
 if __name__ == "__main__":
     results = latest_news()
-    # print(results)
+    print(results)

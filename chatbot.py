@@ -5,6 +5,7 @@ from ChatGPT_HKBU import HKBU_ChatGPT
 from flask import Flask, Response
 from dotenv import load_dotenv
 from news import latest_news
+from zoneinfo import ZoneInfo
 
 
 #load_dotenv(".terraform/secrets.txt")
@@ -58,7 +59,7 @@ def news_summary(update: Update, context: CallbackContext):
 
 def get_latest_news(update: Update, context: CallbackContext):
     results = latest_news(mysql_con, 15)
-    current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
+    current_time = datetime.datetime.now(ZoneInfo("Asia/Hong_Kong")).strftime("%Y-%m-%d %H:%M")
     message = "News updated to " + current_time + "\n"
     for (title, link) in results.items():
         message += f'<a href="{link}">{title}</a>\n'
@@ -128,7 +129,7 @@ def equiped_chatbot(update, context):
                 photo_data = f.read()
             context.bot.send_photo(chat_id=update.effective_chat.id, photo=photo_data, timeout=70, caption="Prompt: " + message_text)
             context.bot.send_message(chat_id=update.effective_chat.id, text="Image Generation Completed, now send to DB...")
-            timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            timestamp = datetime.datetime.now(ZoneInfo("Asia/Hong_Kong")).strftime("%Y-%m-%d %H:%M:%S")
             mysql_db.insert_db("ai_image", mysql_con, timestamp, message_text, s3_path)
             context.bot.send_message(chat_id=update.effective_chat.id, text="DB Stored Successfully.")
         else:

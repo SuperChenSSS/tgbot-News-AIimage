@@ -5,6 +5,7 @@ from google import genai
 from google.genai import types
 from dotenv import load_dotenv
 import datetime
+from zoneinfo import ZoneInfo
 import s3fs
 
 def mount_s3(file_name, data):
@@ -54,7 +55,7 @@ def generate_img(command=""):
         if not chunk.candidates or not chunk.candidates[0].content or not chunk.candidates[0].content.parts:
             continue
         if chunk.candidates[0].content.parts[0].inline_data:
-            file_name = datetime.datetime.now().strftime("%H_%M_%S")
+            file_name = datetime.datetime.now(ZoneInfo("Asia/Hong_Kong")).strftime("%H_%M_%S")
             inline_data = chunk.candidates[0].content.parts[0].inline_data
             file_extension = mimetypes.guess_extension(inline_data.mime_type)
             full_path = f"{file_name}{file_extension}"

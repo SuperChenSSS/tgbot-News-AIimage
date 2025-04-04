@@ -5,6 +5,7 @@ import logging
 import json
 from ChatGPT_HKBU import HKBU_ChatGPT
 import datetime
+from zoneinfo import ZoneInfo
 
 #load_dotenv(".terraform/secrets.txt")
 DB_HOST = os.environ.get("HOST")
@@ -42,7 +43,7 @@ def insert_news(table, connection, data):
     cursor = connection.cursor()
     for (title, link) in data.items():
         #print(f"title: {title}, link: {link}")
-        times = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
+        times = datetime.datetime.now(ZoneInfo("Asia/Hong_Kong")).strftime("%Y-%m-%d %H:%M:%S.%f")
         query = f"INSERT INTO {table} VALUES (\"%s\", \"%s\", \"%s\");"
         args = (times, title, link)
         try:
