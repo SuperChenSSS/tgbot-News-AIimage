@@ -4,7 +4,9 @@ import logging
 import mysql_db
 import datetime
 import os
+from dotenv import load_dotenv
 
+#load_dotenv(".terraform/secrets.txt")
 topic_token = "CAAqJggKIiBDQkFTRWdvSUwyMHZNRGx6TVdZU0FtVnVHZ0pWVXlnQVAB"
 api_key = os.environ.get("KEY_NEWS")
 url = f"https://serpapi.com/search?engine=google_news&gl=hk&topic_token={topic_token}&api_key={api_key}"
@@ -25,6 +27,7 @@ def latest_news(con="", num_max=10):
             is_dump = False
             logging.info("Using cached results")
     else:
+        #print("url: ", url)
         response = requests.request("GET", url, headers=headers, data=payload)
         data = response.json()
         json.dump(data, open(response_file, "w"), indent=4, ensure_ascii=False)
@@ -42,7 +45,7 @@ def latest_news(con="", num_max=10):
                 if title and link and num_data < num_max:
                     num_data += 1
                     results[title] = link
-    if is_dump:
+    if is_dump and con:
         mysql_db.insert_news("news", con, results)
     return results
 
