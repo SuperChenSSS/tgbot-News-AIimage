@@ -6,7 +6,7 @@ import datetime
 import os
 
 topic_token = "CAAqJggKIiBDQkFTRWdvSUwyMHZNRGx6TVdZU0FtVnVHZ0pWVXlnQVAB"
-api_key = "13318211488e6c5d5fc5f20dd1d6fe74bd57962b1ba7425b4cbd243d2a11b453"
+api_key = os.environ.get("KEY_NEWS")
 url = f"https://serpapi.com/search?engine=google_news&gl=hk&topic_token={topic_token}&api_key={api_key}"
 
 payload = {}
