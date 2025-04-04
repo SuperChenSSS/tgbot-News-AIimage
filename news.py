@@ -16,6 +16,7 @@ payload = {}
 headers = {}
 
 def latest_news(con="", num_max=10):
+    """Fetch the latest news from Google News using SerpAPI."""
     current_date = datetime.datetime.now(ZoneInfo("Asia/Hong_Kong")).strftime('%Y-%m-%d-%H')
 
     news_dir = "news"

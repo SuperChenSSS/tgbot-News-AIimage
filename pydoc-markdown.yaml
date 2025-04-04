@@ -18,3 +18,15 @@ renderer:
     name: chatbot
     contents:
     - chatbot.*
+  - title: AI Image Generation
+    name: ai_image_generation
+    contents:
+    - ai_image.*
+  - title: News
+    name: news
+    contents:
+    - news.*
+  - title: MySQL DB
+    name: mysql_db
+    contents:
+    - mysql_db.*

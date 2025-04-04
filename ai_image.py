@@ -9,6 +9,7 @@ from zoneinfo import ZoneInfo
 import s3fs
 
 def mount_s3(file_name, data):
+    """Mounts the file to S3 bucket."""
     bucket_name = "goimage-chen"
     mount_point = "imgs"
     full_path = f"{bucket_name}/{mount_point}/{file_name}"
@@ -20,6 +21,7 @@ def mount_s3(file_name, data):
     return full_path
 
 def generate_img(command=""):
+    """Generates an image using the Gemini API."""
     client = genai.Client(
         api_key=os.environ.get("GEMINI_API_KEY"),
     )

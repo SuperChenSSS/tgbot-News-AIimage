@@ -15,6 +15,7 @@ DB_PASSWORD = os.environ.get("PASSWORD")
 DB_NAME = os.environ.get("DB_NAME")
 
 def connect_sql():
+    """Create and connect to the MySQL database."""
     try:
         pool = pymysql.connect(
             host=DB_HOST,
@@ -30,6 +31,7 @@ def connect_sql():
         return None
 
 def fetch_data(pool, query, args=None):
+    """Fetch the data from DB based on Query."""
     try:
         with pool.cursor() as cursor:
             cursor.execute(query, args)
@@ -40,6 +42,7 @@ def fetch_data(pool, query, args=None):
         return None
 
 def insert_news(table, connection, data):
+    """Insert news data into the database."""
     cursor = connection.cursor()
     for (title, link) in data.items():
         #print(f"title: {title}, link: {link}")
@@ -56,13 +59,7 @@ def insert_news(table, connection, data):
 
 def insert_db(table, connection, timestamp, command, filename):
     """
-    向数据库中插入数据。
-
-    参数:
-        connection: pymysql 连接。
-        timestamp (datetime): 时间戳。
-        command (str): 命令。
-        filename (str): 文件名。
+    Insert data (timestamp, command, filename) into the database.
     """
     query = f"INSERT INTO {table} VALUES (\"%s\", \"%s\", \"%s\");"
     args = (timestamp, command, filename)
@@ -82,6 +79,7 @@ def close_db(connection):
         connection.close()
 
 def news_db(connection, table, number, model="gemini"):
+    """Generates a summary of the latest news from the database."""
     chatgpt = HKBU_ChatGPT()
     if not connection:
         logging.error("Failed to create MySQL connection. Application may not function correctly.")
@@ -99,6 +97,7 @@ def news_db(connection, table, number, model="gemini"):
         return f"Error summarizing data: {e}"
 
 def gpt_summary(connection, table, number, model):
+    """Generates a summary of history images from the database."""
     chatgpt = HKBU_ChatGPT()
     if not connection:
         logging.error("Failed to create MySQL connection. Application may not function correctly.")
