@@ -107,7 +107,7 @@ def gpt_summary(connection, table, number, model):
         query = f"SELECT * FROM {table} ORDER BY timestamp DESC limit {number};"
         data = fetch_data(connection, query)
         logging.info(f"DB Data: {data}")
-        prompt_words = f"{os.environ.get("PROMPT")} + {data}"
+        prompt_words = f"{os.environ.get('PROMPT')} {data}"
         #print(prompt + model)
         response = chatgpt.submit(prompt_words, model)
         return response
