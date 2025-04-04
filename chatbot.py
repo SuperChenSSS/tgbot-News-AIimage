@@ -54,7 +54,7 @@ def main():
     updater.idle()
 
 def news_summary(update: Update, context: CallbackContext):
-    response = mysql_db.news_db(mysql_con, "news", 10)
+    response = "Use AI to summarize...\n" + mysql_db.news_db(mysql_con, "news", 10)
     update.message.reply_text(response)
 
 def get_latest_news(update: Update, context: CallbackContext):
@@ -63,6 +63,7 @@ def get_latest_news(update: Update, context: CallbackContext):
     message = "News updated to " + current_time + "\n"
     for (title, link) in results.items():
         message += f'<a href="{link}">{title}</a>\n'
+    message += "News written to DB completed.\n"
     update.message.reply_text(message, parse_mode=ParseMode.HTML)
 
 def img_summary(update: Update, context: CallbackContext):
