@@ -2,7 +2,9 @@ import pymysql
 from dotenv import load_dotenv
 import os
 import logging
+import json
 from ChatGPT_HKBU import HKBU_ChatGPT
+import datetime
 
 #load_dotenv(".terraform/secrets.txt")
 DB_HOST = os.environ.get("HOST")
@@ -36,6 +38,21 @@ def fetch_data(pool, query, args=None):
         logging.error(f"Error: {e}")
         return None
 
+def insert_news(table, connection, data):
+    cursor = connection.cursor()
+    for (title, link) in data.items():
+        #print(f"title: {title}, link: {link}")
+        times = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
+        query = f"INSERT INTO {table} VALUES (\"%s\", \"%s\", \"%s\");"
+        args = (times, title, link)
+        try:
+            cursor.execute(query, args)
+        except Exception as e:
+            connection.rollback()
+            logging.error(f"Error inserting data: {e}")
+    connection.commit()
+    logging.info(f"Data inserted successfully.")
+
 def insert_db(table, connection, timestamp, command, filename):
     """
     向数据库中插入数据。
@@ -62,6 +79,23 @@ def insert_db(table, connection, timestamp, command, filename):
 def close_db(connection):
     if connection:
         connection.close()
+
+def news_db(connection, table, number, model="gemini"):
+    chatgpt = HKBU_ChatGPT()
+    if not connection:
+        logging.error("Failed to create MySQL connection. Application may not function correctly.")
+        return
+    try:
+        query = f"SELECT title FROM {table} ORDER BY timestamp DESC limit {number};"
+        data = fetch_data(connection, query)
+        logging.info(f"DB Data: {data}")
+        prompt_words = f"You're a helpful financial news collector, please briefly summarize the news retrieved below: {data}"
+        #print(prompt + model)
+        response = chatgpt.submit(prompt_words, model)
+        return response
+    except Exception as e:
+        logging.error(f"Error summarizing data with {model}: {e}")
+        return f"Error summarizing data: {e}"
 
 def gpt_summary(connection, table, number, model):
     chatgpt = HKBU_ChatGPT()

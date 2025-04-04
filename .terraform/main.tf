@@ -106,7 +106,7 @@ resource "aws_apprunner_auto_scaling_configuration_version" "chatbot" {
 
   max_concurrency = 100
   max_size        = 1
-  min_size        = 1
+  min_size        = 3
 
   tags = {
     Name = "chatbot-apprunner-autoscaling"

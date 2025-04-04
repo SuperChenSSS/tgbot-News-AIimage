@@ -4,6 +4,7 @@ from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, Callb
 from ChatGPT_HKBU import HKBU_ChatGPT
 from flask import Flask, Response
 from dotenv import load_dotenv
+from news import latest_news
 
 
 #load_dotenv(".terraform/secrets.txt")
@@ -37,6 +38,8 @@ def main():
     dispatcher.add_handler(CommandHandler("hello", hello))
     dispatcher.add_handler(CommandHandler("model", set_model))
     dispatcher.add_handler(CommandHandler("img_summary", img_summary))
+    dispatcher.add_handler(CommandHandler("latest_news", get_latest_news))
+    dispatcher.add_handler(CommandHandler("news_summary", news_summary))
 
     # Run the Flask app in a separate thread
     flask_thread = threading.Thread(target=app.run, kwargs={'host': '0.0.0.0', 'port': 80, 'debug':False, 'use_reloader': False})
@@ -49,19 +52,30 @@ def main():
     updater.start_polling()
     updater.idle()
 
+def news_summary(update: Update, context: CallbackContext):
+    response = mysql_db.news_db(mysql_con, "news", 10)
+    update.message.reply_text(response)
 
+def get_latest_news(update: Update, context: CallbackContext):
+    results = latest_news(mysql_con, 15)
+    current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
+    message = "News updated to " + current_time + "\n"
+    for (title, link) in results.items():
+        message += f'<a href="{link}">{title}</a>\n'
+    update.message.reply_text(message, parse_mode=ParseMode.HTML)
 
 def img_summary(update: Update, context: CallbackContext):
     global chatgpt
-    chatgpt.current_model = "chatgpt"
+    chatgpt.current_model = "gemini"
     response = mysql_db.gpt_summary(mysql_con, "ai_image", 5, chatgpt.current_model)
     update.message.reply_text(response)
 
 def set_bot_commands(bot):
     """Sets the bot's menu commands."""
     bot_commands = [
+        BotCommand("/latest_news", "Get the latest news"),
+        BotCommand("/news_summary", "Get the AI summary of the latest news"),
         BotCommand("/img_summary", "Give a summary of AI generated images"),
-        BotCommand("/hello", "Greet the user"),
         BotCommand("/model", "Select the model to use (chatgpt/gemini)"),
     ]
     bot.set_my_commands(bot_commands)

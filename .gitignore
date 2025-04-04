@@ -8,3 +8,5 @@ tmp_docs/*
 .terraform/terraform.tfstate
 .terraform/terraform.tfstate.backup
 __pycache__/*
+.vscode
+news
