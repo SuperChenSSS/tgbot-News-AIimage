@@ -10,7 +10,6 @@ from zoneinfo import ZoneInfo
 
 #load_dotenv(".terraform/secrets.txt")
 # global redis1
-global mysql_con
 TELEGRAM_MAX_MESSAGE_LENGTH = int(os.environ.get("MAX_TOKEN"))
 
 app = Flask(__name__)  # Flask app instance
@@ -23,8 +22,6 @@ def health_check():
 def main():
     updater = Updater(token=(os.environ["ACCESS_TOKEN_TG"]), use_context=True)
     dispatcher = updater.dispatcher
-    global mysql_con
-    mysql_con = mysql_db.connect_sql()
                          
     # Logging
     logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
@@ -54,10 +51,13 @@ def main():
     updater.idle()
 
 def news_summary(update: Update, context: CallbackContext):
+    mysql_con = mysql_db.connect_sql()
     response = "Use AI to summarize...\n" + mysql_db.news_db(mysql_con, "news", 10)
+    mysql_con.close()
     update.message.reply_text(response)
 
 def get_latest_news(update: Update, context: CallbackContext):
+    mysql_con = mysql_db.connect_sql()
     results = latest_news(mysql_con, 15)
     current_time = datetime.datetime.now(ZoneInfo("Asia/Hong_Kong")).strftime("%Y-%m-%d %H:%M")
     message = "News updated to " + current_time + "\n"
@@ -65,12 +65,15 @@ def get_latest_news(update: Update, context: CallbackContext):
         message += f'<a href="{link}">{title}</a>\n'
     message += "News written to DB completed.\n"
     update.message.reply_text(message, parse_mode=ParseMode.HTML)
+    mysql_con.close()
 
 def img_summary(update: Update, context: CallbackContext):
     global chatgpt
     chatgpt.current_model = "gemini"
+    mysql_con = mysql_db.connect_sql()
     response = mysql_db.gpt_summary(mysql_con, "ai_image", 5, chatgpt.current_model)
     update.message.reply_text(response)
+    mysql_con.close()
 
 def set_bot_commands(bot):
     """Sets the bot's menu commands."""
@@ -131,8 +134,10 @@ def equiped_chatbot(update, context):
             context.bot.send_photo(chat_id=update.effective_chat.id, photo=photo_data, timeout=70, caption="Prompt: " + message_text)
             context.bot.send_message(chat_id=update.effective_chat.id, text="Image Generation Completed, now send to DB...")
             timestamp = datetime.datetime.now(ZoneInfo("Asia/Hong_Kong")).strftime("%Y-%m-%d %H:%M:%S")
+            mysql_con = mysql_db.connect_sql()
             mysql_db.insert_db("ai_image", mysql_con, timestamp, message_text, s3_path)
             context.bot.send_message(chat_id=update.effective_chat.id, text="DB Stored Successfully.")
+            mysql_con.close()
         else:
             context.bot.send_message(chat_id=update.effective_chat.id, text="Sorry, I can't generate an image for that.")
     else:
