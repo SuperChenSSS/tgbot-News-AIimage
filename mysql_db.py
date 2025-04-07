@@ -25,6 +25,7 @@ def connect_sql():
             database=DB_NAME,
             charset="utf8mb4",
         )
+        pool.ping(reconnect=True)
         return pool
     except Exception as e:
         logging.error(f"Error: {e}")
