@@ -34,6 +34,7 @@ def connect_sql():
 def fetch_data(pool, query, args=None):
     """Fetch the data from DB based on Query."""
     try:
+        pool.ping(reconnect=True)
         with pool.cursor() as cursor:
             cursor.execute(query, args)
             result = cursor.fetchall()
@@ -44,6 +45,7 @@ def fetch_data(pool, query, args=None):
 
 def insert_news(table, connection, data):
     """Insert news data into the database."""
+    connection.ping(reconnect=True)
     cursor = connection.cursor()
     for (title, link) in data.items():
         #print(f"title: {title}, link: {link}")
@@ -67,6 +69,7 @@ def insert_db(table, connection, timestamp, command, filename):
     # print(query % args)
 
     try:
+        connection.ping(reconnect=True)
         with connection.cursor() as cursor:
             cursor.execute(query, args)
             connection.commit()
