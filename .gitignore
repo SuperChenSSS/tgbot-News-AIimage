@@ -2,4 +2,11 @@
 ./config.ini
 ./__pycache__/*
 tmp_docs/*
-secrets.sh
+.terraform/secrets.txt
+.terraform/.terraform
+.terraform/.terraform.lock.hcl
+.terraform/terraform.tfstate
+.terraform/terraform.tfstate.backup
+__pycache__/*
+.vscode
+news

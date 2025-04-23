@@ -1,45 +1,48 @@
-#import configparser
-import os
-import logging
-import redis
+import os, logging, datetime, threading, s3fs, mysql_db
 from telegram import Update, ParseMode, BotCommand
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
 from ChatGPT_HKBU import HKBU_ChatGPT
-import re
+from flask import Flask, Response
+from dotenv import load_dotenv
+from news import latest_news
+from zoneinfo import ZoneInfo
 
-global redis1
+
+#load_dotenv(".terraform/secrets.txt")
+# global redis1
 TELEGRAM_MAX_MESSAGE_LENGTH = int(os.environ.get("MAX_TOKEN"))
+
+app = Flask(__name__)  # Flask app instance
+
+@app.route("/health_cmy")
+def health_check():
+    """Health check endpoint."""
+    return Response("OK", status=200)
 
 def main():
     updater = Updater(token=(os.environ["ACCESS_TOKEN_TG"]), use_context=True)
     dispatcher = updater.dispatcher
-    global redis1
-    redis1 = redis.Redis(host=os.environ['HOST'], 
-                         password=os.environ['PASSWORD'],
-                         port=os.environ['REDISPORT'],
-                         decode_responses=(os.environ['DECODE_RESPONSES']),
-                         username=os.environ['USER_NAME']) 
                          
     # Logging
     logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
-    # Register dispatcher to handle message
-    # echo_handler = MessageHandler(Filters.text & (~Filters.command), echo)
-    # dispatcher.add_handler(echo_handler)
 
     # dispatcher for chatgpt
     global chatgpt
     chatgpt = HKBU_ChatGPT()
     chatgpt_handler = MessageHandler(Filters.text & (~Filters.command), equiped_chatbot)
     dispatcher.add_handler(chatgpt_handler)
-
-    # Add two different commands
-    dispatcher.add_handler(CommandHandler("add", add))
-    dispatcher.add_handler(CommandHandler("help", help_command))
+    
+    # Add different commands
     dispatcher.add_handler(CommandHandler("hello", hello))
-    dispatcher.add_handler(CommandHandler("delete", delete))
-    dispatcher.add_handler(CommandHandler("get", get))
-    dispatcher.add_handler(CommandHandler("set", set))
     dispatcher.add_handler(CommandHandler("model", set_model))
+    dispatcher.add_handler(CommandHandler("img_summary", img_summary))
+    dispatcher.add_handler(CommandHandler("latest_news", get_latest_news))
+    dispatcher.add_handler(CommandHandler("news_summary", news_summary))
+
+    # Run the Flask app in a separate thread
+    flask_thread = threading.Thread(target=app.run, kwargs={'host': '0.0.0.0', 'port': 80, 'debug':False, 'use_reloader': False})
+    flask_thread.daemon = True  # Daemonize thread
+    flask_thread.start()
 
     # Set the bot menu
     set_bot_commands(updater.bot)
@@ -47,15 +50,37 @@ def main():
     updater.start_polling()
     updater.idle()
 
+def news_summary(update: Update, context: CallbackContext):
+    mysql_con = mysql_db.connect_sql()
+    response = "Use AI to summarize...\n" + mysql_db.news_db(mysql_con, "news", 10)
+    mysql_con.close()
+    update.message.reply_text(response)
+
+def get_latest_news(update: Update, context: CallbackContext):
+    mysql_con = mysql_db.connect_sql()
+    results = latest_news(mysql_con, 15)
+    current_time = datetime.datetime.now(ZoneInfo("Asia/Hong_Kong")).strftime("%Y-%m-%d %H:%M")
+    message = "News updated to " + current_time + "\n"
+    for (title, link) in results.items():
+        message += f'<a href="{link}">{title}</a>\n'
+    message += "News written to DB completed.\n"
+    update.message.reply_text(message, parse_mode=ParseMode.HTML)
+    mysql_con.close()
+
+def img_summary(update: Update, context: CallbackContext):
+    global chatgpt
+    chatgpt.current_model = "gemini"
+    mysql_con = mysql_db.connect_sql()
+    response = mysql_db.gpt_summary(mysql_con, "ai_image", 5, chatgpt.current_model)
+    update.message.reply_text(response)
+    mysql_con.close()
+
 def set_bot_commands(bot):
     """Sets the bot's menu commands."""
     bot_commands = [
-        BotCommand("/help", "Show help message"),
-        BotCommand("/add", "Add a keyword to the database"),
-        BotCommand("/delete", "Delete a keyword from the database"),
-        BotCommand("/get", "Get the count of a keyword"),
-        BotCommand("/set", "Change a keyword to another"),
-        BotCommand("/hello", "Greet the user"),
+        BotCommand("/latest_news", "Get the latest news"),
+        BotCommand("/news_summary", "Get the AI summary of the latest news"),
+        BotCommand("/img_summary", "Give a summary of AI generated images"),
         BotCommand("/model", "Select the model to use (chatgpt/gemini)"),
     ]
     bot.set_my_commands(bot_commands)
@@ -88,25 +113,41 @@ def split_message(text, max_length=TELEGRAM_MAX_MESSAGE_LENGTH):
         parts.append(text)
         return parts
     
-def escape_markdown_v2(text):
-    """Escapes reserved characters for Telegram's MarkdownV2."""
-    escape_chars = r"_\*\[\]\(\)~`>#\+\-=|\.!{}"
-    return re.sub(f"([{re.escape(escape_chars)}])", r"\\\1", text)
-
 def equiped_chatbot(update, context):
-    global chatgpt
+    global chatgpt, mysql_con
     if not hasattr(chatgpt, 'current_model'):
         chatgpt.current_model = "gemini"
         logging.warning("chatgpt.current_model was not set. Defaulting to 'gemini'.")
-    reply_message = chatgpt.submit(update.message.text, chatgpt.current_model)
-    logging.info("Update: " + str(update))
-    logging.info("Context: " + str(context))
-    # Split the message if it's too long
-    message_parts = split_message(reply_message)
-    for part in message_parts:
-        escaped_part = escape_markdown_v2(part)
-        context.bot.send_message(chat_id=update.effective_chat.id, text=escaped_part, parse_mode=ParseMode.MARKDOWN_V2)
-    # context.bot.send_message(chat_id=update.effective_chat.id, text=reply_message)
+    message_text = update.message.text
+    img_keywords = os.environ.get("IMG_WORDS").replace("\"","").split(",")
+    # logging.info("Image Keywords: " + str(img_keywords))
+    if any(keyword in message_text.lower() for keyword in img_keywords):
+        context.bot.send_message(chat_id=update.effective_chat.id, text="Image Generation in Progress, this could take about 30 seconds...")
+        try:
+            s3_path = chatgpt.submit(message_text, "image")
+        except Exception as e:
+            context.bot.send_message(chat_id=update.effective_chat.id, text=f"Error: {e}")
+        if s3_path:
+            s3 = s3fs.S3FileSystem(anon=False)
+            with s3.open(s3_path, 'rb') as f:
+                photo_data = f.read()
+            context.bot.send_photo(chat_id=update.effective_chat.id, photo=photo_data, timeout=70, caption="Prompt: " + message_text)
+            context.bot.send_message(chat_id=update.effective_chat.id, text="Image Generation Completed, now send to DB...")
+            timestamp = datetime.datetime.now(ZoneInfo("Asia/Hong_Kong")).strftime("%Y-%m-%d %H:%M:%S")
+            mysql_con = mysql_db.connect_sql()
+            mysql_db.insert_db("ai_image", mysql_con, timestamp, message_text, s3_path)
+            context.bot.send_message(chat_id=update.effective_chat.id, text="DB Stored Successfully.")
+            mysql_con.close()
+        else:
+            context.bot.send_message(chat_id=update.effective_chat.id, text="Sorry, I can't generate an image for that.")
+    else:
+        reply_message = chatgpt.submit(message_text, chatgpt.current_model)
+        logging.info("Update: " + str(update))
+        logging.info("Context: " + str(context))
+        # Split the message if it's too long
+        message_parts = split_message(reply_message)
+        for part in message_parts:
+            context.bot.send_message(chat_id=update.effective_chat.id, text=part)
 
 def echo(update, context):
     """Echo the user message in lowercase.
@@ -123,12 +164,6 @@ def echo(update, context):
     logging.info("Context: " + str(context))
     context.bot.send_message(chat_id=update.effective_chat.id, text=reply_message)
 
-# Define a few command handlers. These usually take the two arguments update and
-# context. Error handlers also receive the raised TelegramError object in error.
-def help_command(update: Update, context: CallbackContext) -> None:
-    """A placeholder when the command /help is issued."""
-    update.message.reply_text('Helping you helping you.')
-
 def hello(update: Update, context: CallbackContext) -> None:
     """Greetings with hello with /hello "keyword".
 
@@ -143,90 +178,6 @@ def hello(update: Update, context: CallbackContext) -> None:
         update.message.reply_text('Good day, ' + msg + '!')
     except (IndexError, ValueError):
         update.message.reply_text('Usage: /hello <keyword>')
-
-def add(update: Update, context: CallbackContext) -> None:
-    """Add a message to DB when the command /add is issued.
-
-    :param update: args[0] as the keyword
-    :type update: str
-    :param context: Reply with You have said args[0] for "value" times.
-    :type context: str
-    """
-    try:
-        global redis1
-        logging.info("Add action on: " + context.args[0])
-        msg = context.args[0] # /add keyword
-        redis1.incr(msg)
-        value = redis1.get(msg)
-        if isinstance(value, bytes):
-            value = value.decode('utf-8')
-        update.message.reply_text("You have said " + msg + " for " + value + " times.")
-
-    except (IndexError, ValueError):
-        update.message.reply_text('Usage: /add <keyword>')
-
-def delete(update: Update, context: CallbackContext) -> None:
-    """Delete a message when the command /delete is issued.
-
-    :param update: args[0] as the keyword
-    :type update: str
-    :param context: Reply with You have deleted "keyword".
-    :type context: str
-    """
-    try:
-        logging.info("Delete action on: " + context.args[0])
-        msg = context.args[0] # /delete keyword
-        redis1.delete(msg)
-        update.message.reply_text("You have deleted " + msg)
-
-    except (IndexError, ValueError):
-        update.message.reply_text('Usage: /delete <keyword>')
-
-def set(update: Update, context: CallbackContext) -> None:
-    """Set args[0] to args[1] when the command /set is issued.
-
-    :param update: args[0] as the keyword to be changed, args[1] as the new keyword
-    :type update: str
-    :param context: Reply with args[0] changed to args[1]
-    :type context: str
-    """
-    try:
-        logging.info("Set action on: " + context.args[0] + " to " + context.args[1])
-        keywordA = context.args[0] # /set keywordA keywordB
-        keywordB = context.args[1]
-        value = redis1.get(keywordA)
-        if value is None:
-            update.message.reply_text("No record for: " + keywordA)
-        else:
-            redis1.set(keywordB, value)
-            redis1.delete(keywordA)
-            update.message.reply_text(keywordA + " changed to " + keywordB)
-
-    except (IndexError, ValueError):
-        update.message.reply_text('Usage: /set <keywordA> <keywordB>')
-
-
-
-def get(update: Update, context: CallbackContext) -> None:
-    """Get the number of occurence with keyword: args[0] when the command /get is issued.
-
-    :param update: args[0] as the keyword
-    :type update: str
-    :param context: Reply with Number of occurence of the keyword.
-    :type context: str
-    """
-    try:
-        logging.info("Get action on: " + context.args[0])
-        msg = context.args[0] # /get keyword
-        value = redis1.get(msg)
-        if value is None:
-            update.message.reply_text("No record for: " + msg)
-        else:
-            if isinstance(value, bytes):
-                value = value.decode('utf-8')
-            update.message.reply_text("You have said " + msg + " for " + value + " times.")
-    except (IndexError, ValueError):
-        update.message.reply_text('Usage: /get <keyword>')
 
 if __name__ == '__main__':
     main()
