@@ -2,7 +2,7 @@ name: ECR Deploy
 on:
     push:
         branches:
-        - migrate_aws
+        - main
 jobs:
     release-notes:
         runs-on: ubuntu-latest
