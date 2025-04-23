@@ -4,12 +4,14 @@ Telegram Bot for Cloud Computing COMP7940 course project. It involves 2 main fea
 - **News Aggregation**: 
   - Retrieve local Financial news 
   - Use Gemini API to summarize all news.
-<img src="imgs/news1.jpg" alt="News Aggregation" width=50%/><img src="imgs/news2.jpg" alt="News Summary" width=50%/>
+<br/>
+<img src="imgs/news1.jpg" alt="News Aggregation" width=45%/><img src="imgs/news2.jpg" alt="News Summary" width=45%/>
 
 - **AI Image Generation**:
   - Generate image with Gemini image API
   - Use Gemini API to summarize all generated images
-  <img src="imgs/aiimg1.jpg" alt="AI Image Generation" width=50%/><img src="imgs/aiimg2.jpg" alt="AI Image Summary" width=50%/>
+<br/>
+<img src="imgs/aiimg1.jpg" alt="AI Image Generation" width=45%/><img src="imgs/aiimg2.jpg" alt="AI Image Summary" width=45%/>
 
 ## Installation
 1. Install dependencies
